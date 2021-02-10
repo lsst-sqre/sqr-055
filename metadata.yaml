@@ -37,14 +37,18 @@ authors:
 copyright: "2021, Association of Universities for Research in Astronomy, Inc. (AURA)"
 
 # Description. A short, 1-2 sentence statemement used by document indices.
-description: "We plan to use COmanage as the identity management platform for the Rubin Science Platform. This document describes how to configure COmanage for that purpose and proposes a design for the necessary integration services."
+description: >
+  Describes how to configure COmanage as the identity management platform
+  for the Rubin Science Platform and proposes a design for the necessary
+  integration services.
 
 # Abstract, if available
-# abstract: >
-#           Write your paragraph
-#           here with multiple lines.
-#
-#           You can have multiple paragraphs too.
+abstract: >
+  We plan to use COmanage as the identity management platform for the
+  Rubin Science Platform. This document describes how to configure
+  COmanage for that purpose and proposes a design for the necessary
+  integration services to retrieve user metadata, group membership, and
+  group metadata.
 
 # URL where this document is published by Read the Docs. e.g. http://sqr-001.lsst.codes
 url: "https://sqr-055.lsst.io"

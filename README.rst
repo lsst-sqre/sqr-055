@@ -14,7 +14,7 @@ COmanage configuration for Rubin Science Platform
 SQR-055
 =======
 
-We plan to use COmanage as the identity management platform for the Rubin Science Platform. This document describes how to configure COmanage for that purpose and proposes a design for the necessary integration services.
+Describes how to configure COmanage as the identity management platform for the Rubin Science Platform and proposes a design for the necessary integration services.
 
 **Links:**
 
