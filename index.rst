@@ -21,6 +21,18 @@ Add username to enrollment flow
    Set the type of the field to CO Person, Identifier, UID.
    Mark as required.
 
+Configure LDAP provisioning target
+----------------------------------
+
+#. Go to Configuration -> Provisioning Targets and configure Primary LDAP
+#. Go down to the attribute configuration
+#. Enable ``displayName``, disable ``givenName``, and set it to Official
+#. Change ``uid`` to use the UID identifier
+#. Enable ``groupOfNames`` objectclass
+#. Enable ``hasMember`` in the ``eduMember`` objectclass
+#. Enable ``voPerson`` and set ``voPersonID`` to the LSST Registry ID
+#. Save and then Reprovision All to update existing records
+
 Dashboard
 ---------
 
@@ -29,6 +41,53 @@ We will want to edit the default dashboard to remove those widges and replace th
 
 Integration
 ===========
+
+API interfaces
+--------------
+
+Only the `REST v1 API <https://spaces.at.internet2.edu/display/COmanage/REST+API+v1>`__ is currently available.
+The base URL is the hostname of the COmanage registry service with ``/registry`` appended.
+
+To make LDAP queries, use commands like:
+
+.. code-block:: console
+
+   $ ldapsearch -LLL -H ldaps://ldap-test.cilogon.org \
+                -D 'uid=readonly_user,ou=system,o=LSST,o=CO,dc=lsst,dc=org' \
+                -x -w PASSWORD -b 'ou=people,o=LSST,o=CO,dc=lsst,dc=org'
+
+The password is in 1Password under the hostname of the COmanage registry.
+
+Example LDAP query results
+--------------------------
+
+An example user::
+
+    dn: voPersonID=LSST100006,ou=people,o=LSST,o=CO,dc=lsst,dc=org
+    sn: Allbery
+    cn: Russ Allbery
+    objectClass: person
+    objectClass: organizationalPerson
+    objectClass: inetOrgPerson
+    objectClass: eduMember
+    objectClass: voPerson
+    displayName: Russ Allbery
+    mail: rra@lsst.org
+    uid: rra
+    isMemberOf: CO:members:all
+    isMemberOf: CO:members:active
+    isMemberOf: CO:admins
+    isMemberOf: science-platform-idf-dev
+    voPersonID: LSST100006
+
+An example group::
+
+    dn: cn=science-platform-idf-dev,ou=groups,o=LSST,o=CO,dc=lsst,dc=org
+    cn: science-platform-idf-dev
+    member: voPersonID=LSST100006,ou=people,o=LSST,o=CO,dc=lsst,dc=org
+    objectClass: groupOfNames
+    objectClass: eduMember
+    hasMember: rra
 
 User information API
 --------------------
@@ -58,11 +117,13 @@ Alternately, we could use COmanage for those environments as well, but that woul
 
 It appears the preferred interface in COmanage to pull this type of user metadata is LDAP.
 
+Full name should always be ``displayName`` and we should not use the other LDAP attributes that attempt to parse a name into components.
+They do not internationalize well.
+
 User onboarding API
 -------------------
 
 When a new user first accesses the Rubin Science Platform, we will need to route them through the onboarding flow, and then may need to make additional changes to their record via the COmanage API.
-For example, if the CILogon numeric identifier isn't usable as a numeric user ID, we may need to assign one.
 This can be integrated with the onboarding service described in SQR-052_.
 This service would have a privileged API token for the Rubin Science Platform COmanage environment.
 
@@ -71,19 +132,9 @@ This service would have a privileged API token for the Rubin Science Platform CO
 Open questions
 ==============
 
-#. What is the URL of the API service?
+#. How should we allocate numeric GIDs and expose them in LDAP?
 
-#. What is the hostname and authentication mechanism for the LDAP service?
-   Is this the best way to retrieve client metadata?
+#. If we enable the ``voPosixGroup`` schema, where does the ``voPosixAccountGidNumber`` attribute come from?
 
-#. Where can numeric UIDs and GIDs be stored in user and group metadata?
-   Each user must have a unique numeric UID, which is also reserved as a GID.
-   Each group must have a unique numeric GID that does not overlap with any UIDs.
-   Assignment can be done via an integration service that looks for new users, but this information ideally should be stored in COmanage somewhere.
-   Where should it be stored?
-   None of the default identifier types look suitable for this purpose, but I can't find detailed documentation for all of them.
-   Perhaps we should use the CILogon numeric ID?
-   (This was the recommendation from our original requirements review.)
-
-#. How to restrict inbound CILogon authentications to the Rubin Science Platform to only registered COmanage users?
+#. How can we restrict inbound CILogon authentications to the Rubin Science Platform to only registered COmanage users?
    Is this functionality that's built into CILogon and COmanage in some way, or will the Rubin Science Platform authentication layer need to check COmanage to see if the user already exists and send them into an account creation flow if they do not?
