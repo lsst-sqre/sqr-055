@@ -20,6 +20,7 @@ Add username to enrollment flow
    Allow the user to change it during enrollment.
    Set the type of the field to CO Person, Identifier, UID.
    Mark as required.
+#. Repeat for the "Invite a collaborator" enrollment flow
 
 Configure LDAP provisioning target
 ----------------------------------
@@ -30,7 +31,7 @@ Configure LDAP provisioning target
 #. Change ``uid`` to use the UID identifier
 #. Enable ``groupOfNames`` objectclass
 #. Enable ``hasMember`` in the ``eduMember`` objectclass
-#. Enable ``voPerson`` and set ``voPersonID`` to the LSST Registry ID
+#. Enable ``voPerson`` and set ``voPersonID`` to the LSST Registry ID and ``voPersonSoRID`` to System of Record ID
 #. Save and then Reprovision All to update existing records
 
 Dashboard
@@ -79,15 +80,22 @@ An example user::
     isMemberOf: CO:admins
     isMemberOf: science-platform-idf-dev
     voPersonID: LSST100006
+    voPersonSoRID: http://cilogon.org/serverA/users/31388556
+
+The ``voPersonID`` without the ``LSST`` prefix should be usable as a numeric UID.
 
 An example group::
 
     dn: cn=science-platform-idf-dev,ou=groups,o=LSST,o=CO,dc=lsst,dc=org
     cn: science-platform-idf-dev
     member: voPersonID=LSST100006,ou=people,o=LSST,o=CO,dc=lsst,dc=org
+    member: voPersonID=LSST100007,ou=people,o=LSST,o=CO,dc=lsst,dc=org
     objectClass: groupOfNames
     objectClass: eduMember
     hasMember: rra
+    hasMember: thoron
+
+(This does not yet have numeric GID information pending resolution of how best to add that.)
 
 User information API
 --------------------
@@ -123,7 +131,14 @@ They do not internationalize well.
 User onboarding API
 -------------------
 
-When a new user first accesses the Rubin Science Platform, we will need to route them through the onboarding flow, and then may need to make additional changes to their record via the COmanage API.
+The "Self Signup With Approval" flow seems to be the closest fit for our requirements.
+To initiate that flow, we send the user to a specific URL at the COmanage registry.
+We can initiate that flow from the landing page or from Gafaelfawr if we detect that the user is authenticated but not enrolled in COmanage.
+
+It's possible to then configure a return URL to which the user goes after enrollment is complete, but that's probably not that useful when we're using an approval flow.
+We will need to customize the email messages and web pages presented as part of the approval flow.
+
+When a new user first accesses the Rubin Science Platform, we will need to route them through the onboarding flow, and then may need to make additional changes to their record via the COmanage API such as adding them to groups.
 This can be integrated with the onboarding service described in SQR-052_.
 This service would have a privileged API token for the Rubin Science Platform COmanage environment.
 
@@ -132,9 +147,18 @@ This service would have a privileged API token for the Rubin Science Platform CO
 Open questions
 ==============
 
-#. How should we allocate numeric GIDs and expose them in LDAP?
+#. When using the "Self Signup With Approval" flow, it gets as far as sending the email confirmation.
+   When I then click on the link for confirming email, it shows a page with an error saying the invite couldn't be found.
+   However, this did work correctly and the email was confirmed.
+   The petition is waiting for approval.
+   If I approve the petition, all reloads and attempts to interact with the page presented after confirming email still don't work, but logging out and logging back in again does work and shows the expected results.
 
-#. If we enable the ``voPosixGroup`` schema, where does the ``voPosixAccountGidNumber`` attribute come from?
+#. Adding ``username`` to the "Invite a collaborator" flow prompts the inviting person for the username rather than the invited person.
+   How can we redesign that flow so that the invited person is prompted for their chosen username after they have enrolled?
+
+#. How should we allocate numeric GIDs and expose them in LDAP?
+   If we enable the ``voPosixGroup`` schema, where does the ``voPosixAccountGidNumber`` attribute come from?
 
 #. How can we restrict inbound CILogon authentications to the Rubin Science Platform to only registered COmanage users?
    Is this functionality that's built into CILogon and COmanage in some way, or will the Rubin Science Platform authentication layer need to check COmanage to see if the user already exists and send them into an account creation flow if they do not?
+   One option would be to not integrate the two from a CILogon attribute release perspective and instead use the CILogon identifier in the ``sub`` claim to look up the user in LDAP and obtain their registered username and other data, or determine that the user has not registered yet.
