@@ -97,6 +97,76 @@ An example group::
 
 (This does not yet have numeric GID information pending resolution of how best to add that.)
 
+Numeric GIDs
+------------
+
+Getting numeric GIDs into the LDAP entries for each group appears to be difficult.
+The LDAP connector does not appear to have an option to add arbitrary group identifiers to the group LDAP entry.
+There are a few possible options.
+
+Grouper
+"""""""
+
+To be evaluated.
+
+Group REST API
+""""""""""""""
+
+Arbitrary identifiers can be added to groups, so a group can be configured with an auto-incrementing unique identifier similar to what we use for users.
+Although that identifier isn't exposed in LDAP, it can be read via the COmanage REST API using a URL such as::
+
+    https://<registry-url>/registry/identifiers.json?cogroupid=7
+
+The group ID can be obtained from the ``/registry/co_groups.json`` route, searching on a specific ``coid``.
+
+voPosixGroup
+""""""""""""
+
+One option would be to enable ``voPosixGroup`` and generate group IDs that way.
+However, that process is somewhat complex.
+
+COmanage Registry has the generic notion of a `Cluster <https://spaces.at.internet2.edu/display/COmanage/Clusters>`__.
+A Cluster is used to represent a CO Person's accounts with a given application or service.
+
+Cluster functionality is implemented by Cluster Plugins.
+Right now there is one Cluster Plugin that comes out of the box with COmanage, the `UnixCluster plugin <https://spaces.at.internet2.edu/display/COmanage/Unix+Cluster+Plugin>`__.
+
+The UnixCluster plugin is configured with a "GID Type."
+From the documentation we read "When a CO Group is mapped to a Unix Cluster Group, the CO Group Identifier of this type will be used as the group's numeric ID."
+CO Person can then have a UnixCluster account that has associated with it a UnixCluster Group, and the group will have a GID identifier.
+
+To have the information about the UnixCluster and the UnixCluster Group provisioned into LDAP using the ``voPosixAccount`` objectClass, you need to define a `CO Service <https://spaces.at.internet2.edu/display/COmanage/Registry+Services>`__ for the UnixCluster.
+In that configuration you need to specify a "short label", which will become value for an LDAP attribute option.
+Since the ``voPosixAccount`` objectClass attributes are multi-valued, you can represent multiple "clusters," and they are distinguised by using that LDAP attribute option value.
+For example::
+
+    dn: voPersonID=LSST100000,ou=people,o=LSST,o=CO,dc=lsst,dc=org
+    sn: KORANDA
+    cn: SCOTT KORANDA
+    objectClass: person
+    objectClass: organizationalPerson
+    objectClass: inetOrgPerson
+    objectClass: eduMember
+    objectClass: voPerson
+    objectClass: voPosixAccount
+    givenName: SCOTT
+    mail: SKORANDA@CS.WISC.EDU
+    uid: http://cilogon.org/server/users/2604273
+    isMemberOf: CO:members:all
+    isMemberOf: CO:members:active
+    isMemberOf: scott.koranda UnixCluster Group
+    voPersonID: LSST100000
+    voPosixAccountUidNumber;scope-primary: 1000000
+    voPosixAccountGidNumber;scope-primary: 1000000
+    voPosixAccountHomeDirectory;scope-primary: /home/scott.koranda
+
+This reflects a CO Service for the UnixAccount using the short label "primary."
+With a second UnixCluster and CO Service with short label "slac" to represent an account at SLAC, then I would have additionally::
+
+    voPosixAccountGidNumber;scope-slac: 1000001
+
+UnixCluster object and UnixCluster Group objects and all the identifiers are usually established during an enrollment flow.
+
 User information API
 --------------------
 
@@ -147,6 +217,9 @@ This service would have a privileged API token for the Rubin Science Platform CO
 Open questions
 ==============
 
+#. Evaluate Grouper as an alternative to COmanage Registry groups for self-managed groups (and possibly for system-managed groups).
+   Can Grouper add numeric GIDs to groups and express them in LDAP?
+
 #. When using the "Self Signup With Approval" flow, it gets as far as sending the email confirmation.
    When I then click on the link for confirming email, it shows a page with an error saying the invite couldn't be found.
    However, this did work correctly and the email was confirmed.
@@ -155,9 +228,6 @@ Open questions
 
 #. Adding ``username`` to the "Invite a collaborator" flow prompts the inviting person for the username rather than the invited person.
    How can we redesign that flow so that the invited person is prompted for their chosen username after they have enrolled?
-
-#. How should we allocate numeric GIDs and expose them in LDAP?
-   If we enable the ``voPosixGroup`` schema, where does the ``voPosixAccountGidNumber`` attribute come from?
 
 #. How can we restrict inbound CILogon authentications to the Rubin Science Platform to only registered COmanage users?
    Is this functionality that's built into CILogon and COmanage in some way, or will the Rubin Science Platform authentication layer need to check COmanage to see if the user already exists and send them into an account creation flow if they do not?
