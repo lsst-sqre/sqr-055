@@ -40,14 +40,17 @@ Dashboard
 COmanage comes with a bunch of default components that we probably don't want to use (announcement feeds, forums, etc.).
 We will want to edit the default dashboard to remove those widges and replace them with widges for group management and personal identity management (if there are any applicable ones).
 
-Integration
-===========
+API
+===
 
-API interfaces
---------------
+REST API
+--------
 
 Only the `REST v1 API <https://spaces.at.internet2.edu/display/COmanage/REST+API+v1>`__ is currently available.
 The base URL is the hostname of the COmanage registry service with ``/registry`` appended.
+
+LDAP
+----
 
 To make LDAP queries, use commands like:
 
@@ -58,9 +61,6 @@ To make LDAP queries, use commands like:
                 -x -w PASSWORD -b 'ou=people,o=LSST,o=CO,dc=lsst,dc=org'
 
 The password is in 1Password under the hostname of the COmanage registry.
-
-Example LDAP query results
---------------------------
 
 An example user::
 
@@ -95,34 +95,33 @@ An example group::
     hasMember: rra
     hasMember: thoron
 
-(This does not yet have numeric GID information pending resolution of how best to add that.)
+Note that the group entry in LDAP doesn't contain numeric GID information.
+See :ref:`Numeric GIDs <gid>` for more details.
+
+.. _gid:
 
 Numeric GIDs
 ------------
 
-Getting numeric GIDs into the LDAP entries for each group appears to be difficult.
-The LDAP connector does not appear to have an option to add arbitrary group identifiers to the group LDAP entry.
+Getting numeric GIDs into the LDAP entries for each group isn't well-supported by COmanage.
+The LDAP connector does not have an option to add arbitrary group identifiers to the group LDAP entry.
 There are a few possible options.
-
-Grouper
-"""""""
-
-To be evaluated.
 
 Group REST API
 """"""""""""""
 
-Arbitrary identifiers can be added to groups, so a group can be configured with an auto-incrementing unique identifier similar to what we use for users.
+Arbitrary identifiers can be added to groups, so a group can be configured with an auto-incrementing unique identifier in the same way that we do for users, using a base number of 200000 instead of 100000 to keep the UIDs and GIDs distinct (allowing the UID to be used as the GID of the primary group).
 Although that identifier isn't exposed in LDAP, it can be read via the COmanage REST API using a URL such as::
 
     https://<registry-url>/registry/identifiers.json?cogroupid=7
 
 The group ID can be obtained from the ``/registry/co_groups.json`` route, searching on a specific ``coid``.
+Middleware running on the Rubin Science Platform could cache the GID information for every group, refresh it periodically, and query for the GID of a new group when seen.
 
 voPosixGroup
 """"""""""""
 
-One option would be to enable ``voPosixGroup`` and generate group IDs that way.
+Another option is to enable ``voPosixGroup`` and generate group IDs that way.
 However, that process is somewhat complex.
 
 COmanage Registry has the generic notion of a `Cluster <https://spaces.at.internet2.edu/display/COmanage/Clusters>`__.
@@ -166,6 +165,16 @@ With a second UnixCluster and CO Service with short label "slac" to represent an
     voPosixAccountGidNumber;scope-slac: 1000001
 
 UnixCluster object and UnixCluster Group objects and all the identifiers are usually established during an enrollment flow.
+
+Custom development
+""""""""""""""""""
+
+We could enhance (or pay someone to enhance) the LDAP Provisioning Plugin to allow us to express an additional object class in the group tree in LDAP, containing a numeric GID identifier.
+
+Integration
+===========
+
+We will need to write the following services to integrate with COmanage.
 
 User information API
 --------------------
@@ -214,21 +223,25 @@ This service would have a privileged API token for the Rubin Science Platform CO
 
 .. _SQR-052: https://sqr-052.lsst.io/
 
+The web pages shown during this onboarding flow are controlled by the style information in the `lsst-registry-landing <https://github.com/cilogon/lsst-registry-landing>`__ project on GitHub.
+
+Currently, user onboarding has a bug: After choosing their name, email, and username, the user is sent an email message to confirm that they have control over that email address.
+The link in the mail message has a one-time code in it, and confirms the email address when followed.
+However, sites with anti-virus integrated with their email system (such as AURA) often pre-fetch all URLs seen in email addresses.
+Since no authentication or confirmation is required when following the link, this means that any email address at such a domain is automatically confirmed without any human interaction, posing both a security flaw and a UI problem because the user will get a confusing error message when they follow that link manually.
+
+We will need to work with the COmanage maintainers to either require authentication to confirm the email address or to require a button that one has to click rather than doing the confirmation automatically.
+
+User authentication
+-------------------
+
+We will point Gafaelfawr_ for a Rubin Science Platform instance directly at CILogon and not configure CILogon to know about the contents of COmanage.
+It will therefore be the responsibility of Gafaelfawr, when processing a user login via CILogon, to confirm via the user information API that the user has a valid account and to send them through the onboarding flow if they don't.
+Gafaelfawr will have the CILogon unique identifier, so the user information API will need to support queries based on that and return the appropriate username or an error if the user is not registered.
+
+.. _Gafaelfawr: https://gafaelfawr.lsst.io/
+
 Open questions
 ==============
 
 #. Evaluate Grouper as an alternative to COmanage Registry groups for self-managed groups (and possibly for system-managed groups).
-   Can Grouper add numeric GIDs to groups and express them in LDAP?
-
-#. When using the "Self Signup With Approval" flow, it gets as far as sending the email confirmation.
-   When I then click on the link for confirming email, it shows a page with an error saying the invite couldn't be found.
-   However, this did work correctly and the email was confirmed.
-   The petition is waiting for approval.
-   If I approve the petition, all reloads and attempts to interact with the page presented after confirming email still don't work, but logging out and logging back in again does work and shows the expected results.
-
-#. Adding ``username`` to the "Invite a collaborator" flow prompts the inviting person for the username rather than the invited person.
-   How can we redesign that flow so that the invited person is prompted for their chosen username after they have enrolled?
-
-#. How can we restrict inbound CILogon authentications to the Rubin Science Platform to only registered COmanage users?
-   Is this functionality that's built into CILogon and COmanage in some way, or will the Rubin Science Platform authentication layer need to check COmanage to see if the user already exists and send them into an account creation flow if they do not?
-   One option would be to not integrate the two from a CILogon attribute release perspective and instead use the CILogon identifier in the ``sub`` claim to look up the user in LDAP and obtain their registered username and other data, or determine that the user has not registered yet.
