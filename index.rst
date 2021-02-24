@@ -20,7 +20,10 @@ Add username to enrollment flow
    Allow the user to change it during enrollment.
    Set the type of the field to CO Person, Identifier, UID.
    Mark as required.
-#. Repeat for the "Invite a collaborator" enrollment flow
+
+This does not work for the "Invite a collaborator" enrollment flow, since the person creating the invite is prompted for the username.
+We probably won't need that flow.
+If we do, we'll have to find a way to modify it to defer the username choice to the person who was invited.
 
 Configure LDAP provisioning target
 ----------------------------------
@@ -106,6 +109,11 @@ Numeric GIDs
 Getting numeric GIDs into the LDAP entries for each group isn't well-supported by COmanage.
 The LDAP connector does not have an option to add arbitrary group identifiers to the group LDAP entry.
 There are a few possible options.
+
+Grouper
+"""""""
+
+A look at what capabilities Grouper has to assign GIDs and expose them via an API or via LDAP is upcoming, pending addition of Grouper to the test environment.
 
 Group REST API
 """"""""""""""
@@ -206,6 +214,7 @@ It appears the preferred interface in COmanage to pull this type of user metadat
 
 Full name should always be ``displayName`` and we should not use the other LDAP attributes that attempt to parse a name into components.
 They do not internationalize well.
+Unfortunately, the COmanage sign-on flow still asks for users to enter their name in components.
 
 User onboarding API
 -------------------
@@ -245,3 +254,14 @@ Open questions
 ==============
 
 #. Evaluate Grouper as an alternative to COmanage Registry groups for self-managed groups (and possibly for system-managed groups).
+
+#. Determine how to manage and expose unique GIDs.
+
+#. We want each user to also be the sole member of a group by the same name.
+   We can either create that group as a real group or artificially create it on the Science Platform side.
+   (The latter may be preferrable to avoid a plethora of uneditable groups.)
+   This requires enforcing uniqueness between group names and user names in some way.
+   Determine how to do that.
+
+#. What are the allowed characters in usernames and group names?
+   How can we restrict that character set?
