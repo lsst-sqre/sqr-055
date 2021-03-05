@@ -226,6 +226,13 @@ We can initiate that flow from the landing page or from Gafaelfawr if we detect 
 It's possible to then configure a return URL to which the user goes after enrollment is complete, but that's probably not that useful when we're using an approval flow.
 We will need to customize the email messages and web pages presented as part of the approval flow.
 
+User-chosen usernames must meet the following requirements (the same as GitHub):
+
+* Only alphanumerics and hyphen
+* No two consecutive hyphens
+* Username may not start or end with a hyphen
+* Username may not be all digits
+
 When a new user first accesses the Rubin Science Platform, we will need to route them through the onboarding flow, and then may need to make additional changes to their record via the COmanage API such as adding them to groups.
 This can be integrated with the onboarding service described in SQR-052_.
 This service would have a privileged API token for the Rubin Science Platform COmanage environment.
@@ -250,6 +257,24 @@ Gafaelfawr will have the CILogon unique identifier, so the user information API 
 
 .. _Gafaelfawr: https://gafaelfawr.lsst.io/
 
+User self groups
+----------------
+
+Each user will appear to the Rubin Science Platform to also be the sole member of a group with the same name as the username and the same GID as the UID.
+This is a requirement for POSIX file systems underlying the Notebook Aspect and for the Butler service (see DMTN-182_ for the latter).
+
+These groups will not be managed in COmanage or Grouper.
+They will be synthesized by the group API maintained as part of the Science Platform.
+
+.. _DMTN-182: https://dmtn-182.lsst.io/
+
+Group naming
+------------
+
+Since each username must also correspond to a (synthesized) group name, we must avoid naming conflicts between users and groups.
+We will do this by requiring all self-service group names start with ``g_``.
+Since underscore (``_``) is not a valid character in usernames, this will avoid any conflicts.
+
 Open questions
 ==============
 
@@ -257,11 +282,6 @@ Open questions
 
 #. Determine how to manage and expose unique GIDs.
 
-#. We want each user to also be the sole member of a group by the same name.
-   We can either create that group as a real group or artificially create it on the Science Platform side.
-   (The latter may be preferrable to avoid a plethora of uneditable groups.)
-   This requires enforcing uniqueness between group names and user names in some way.
-   Determine how to do that.
-
 #. What are the allowed characters in usernames and group names?
    How can we restrict that character set?
+   How can we require that all group names start with ``g_``?
