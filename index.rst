@@ -285,3 +285,7 @@ Open questions
 #. What are the allowed characters in usernames and group names?
    How can we restrict that character set?
    How can we require that all group names start with ``g_``?
+
+#. How can we define custom group attributes to store quota information?
+
+#. How do we get access to the Grouper web services API?
