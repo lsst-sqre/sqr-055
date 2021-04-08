@@ -37,11 +37,72 @@ Configure LDAP provisioning target
 #. Enable ``voPerson`` and set ``voPersonID`` to the LSST Registry ID and ``voPersonSoRID`` to System of Record ID
 #. Save and then Reprovision All to update existing records
 
+Username validation
+-------------------
+
+Enable the `Regex Identifier Validator Plugin`_ and configure it to require that UID identifiers match::
+
+    ^[a-z0-9](?:[a-z0-9]|-[a-z0-9])*[a-z](?:[a-z0-9]|-[a-z0-9])*$
+
+We use the UID as a username, and this restricts the usernames to the valid values for a GitHub username while disallowing single-character usernames and usernames that are entirely numbers.
+
+Group name validation
+---------------------
+
+Enable the `Group Name Filter Plugin`_ and set the target identifier to a custom identifier.
+Using the Regex Identifier Validator Plugin, require the values of that identifier match::
+
+    ^g_[a-z][a-z0-9_-]*$
+
+This essentially replaces the group name with an identifier and requires that identifier to start with ``g_``, which will avoid conflicts between usernames and groups.
+
+.. _Regex Identifier Validator Plugin: https://spaces.at.internet2.edu/display/COmanage/Regex+Identifier+Validator+Plugin
+.. _Group Name Filter Plugin: https://spaces.at.internet2.edu/display/COmanage/Group+Name+Filter+Plugin
+
 Dashboard
 ---------
 
 COmanage comes with a bunch of default components that we probably don't want to use (announcement feeds, forums, etc.).
 We will want to edit the default dashboard to remove those widges and replace them with widges for group management and personal identity management (if there are any applicable ones).
+
+Group management
+================
+
+We have two primary options for managing groups via COmanage: using COmanage Registry groups, or using Grouper.
+In both cases, there are limitations on how much we can customize the UI without a lot of development.
+
+Quota calculation is not directly supported with either system and in either case would need custom development (either via a plugin or via a service that used the group API).
+
+COmanage Registry groups
+------------------------
+
+Advantages:
+
+- Uses the same UI as the onboarding and identity management process
+- Possible (albeit complex) to automatically generate GIDs using ``voPosixGroup`` (see :ref:`voposixgroup`)
+
+Disadvantages:
+
+- No support for nested groups
+- Groups cannot own other groups
+- No support for set math between groups
+- No generic metadata support, so group quotas would need to be maintained separately (presumably by a Rubin-developed service)
+- There currently is a rendering bug that causes each person to show up three times when editing the group membership, but this will be fixed in the 4.0.0 release due in the second quarter of 2021
+
+Grouper
+-------
+
+Advantages:
+
+- Full support for nested groups
+- Groups can own other groups
+- Specializes in set math between groups if we want to do complex authorization calculations
+
+Disadvantages:
+
+- More complex setup and data flow
+- Users have to interact with two UIs, the COmanage one for identities and the Grouper UI for group management
+- No support for automatic GID generation
 
 API
 ===
@@ -125,6 +186,8 @@ Although that identifier isn't exposed in LDAP, it can be read via the COmanage 
 
 The group ID can be obtained from the ``/registry/co_groups.json`` route, searching on a specific ``coid``.
 Middleware running on the Rubin Science Platform could cache the GID information for every group, refresh it periodically, and query for the GID of a new group when seen.
+
+.. _voposixgroup:
 
 voPosixGroup
 """"""""""""
@@ -278,13 +341,7 @@ Since underscore (``_``) is not a valid character in usernames, this will avoid 
 Open questions
 ==============
 
-#. Evaluate Grouper as an alternative to COmanage Registry groups for self-managed groups (and possibly for system-managed groups).
-
 #. Determine how to manage and expose unique GIDs.
-
-#. What are the allowed characters in usernames and group names?
-   How can we restrict that character set?
-   How can we require that all group names start with ``g_``?
 
 #. How can we define custom group attributes to store quota information?
 
