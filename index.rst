@@ -8,6 +8,29 @@ Abstract
 We plan to use COmanage as the identity management platform for the Rubin Science Platform.
 This document describes how to configure COmanage for that purpose and proposes a design for the necessary integration services to retrieve user metadata, group membership, and group metadata.
 
+Recommendations
+===============
+
+#. **Use COmanage for group management.**
+   Grouper offers more features, but at the cost of additional user complexity, a UI that's not better than the COmanage UI, a less usable API, and additional integration and conceptual complexity.
+
+#. **Use ``voPosixGroup`` for numeric GIDs.**
+   The complexity level is unfortunate, but it appears to mostly be one-time configuration complexity, and there are substantial implementation advantages to supporting automatic assignment of new GIDs without having to write custom code.
+
+#. **Use LDAP as the primary API to retrieve user and group data.**
+   Despite requiring an LDAP library dependency, this looks easier to use than the COmanage or Grouper APIs.
+   It will also be the primary source of GIDs given the use of ``voPosixGroup``.
+
+#. **Implement quota rules outside of COmanage.**
+   We have to maintain a local database anyway for the token system and can put quota metadata in the same place.
+   Neither COmanage nor Grouper easily support quota math.
+   The Grouper API could allow us to use it as a backing store for quota data, but the API is sufficiently hard to use that this isn't an attractive option.
+
+#. **Write a local service to return user metadata.**
+   That API service gather data from LDAP and provide the equivalent of the current Gafaelfawr ``/auth/api/v1/user-info`` endpoint, which returns full name, email address, numeric UID, and group information (names and GIDs).
+   That service can be extended to support quotas when those are added.
+   Gafaelfawr will then query that service as part of the ``/auth`` endpoint (probably with local caching for performance).
+
 Configuration
 =============
 
@@ -72,6 +95,7 @@ We have two primary options for managing groups via COmanage: using COmanage Reg
 In both cases, there are limitations on how much we can customize the UI without a lot of development.
 
 Quota calculation is not directly supported with either system and in either case would need custom development (either via a plugin or via a service that used the group API).
+Recording quota information for groups locally and using the group API (or LDAP) to synchronize the list of groups with the canonical list looks like the easiest path.
 
 COmanage Registry groups
 ------------------------
@@ -97,6 +121,7 @@ Advantages:
 - Full support for nested groups
 - Groups can own other groups
 - Specializes in set math between groups if we want to do complex authorization calculations
+- Arbitrary metadata can be added to groups via the API, so we could use Grouper as our data store rather than a local database
 
 Disadvantages:
 
@@ -107,8 +132,8 @@ Disadvantages:
 API
 ===
 
-REST API
---------
+COmanage REST API
+-----------------
 
 Only the `REST v1 API <https://spaces.at.internet2.edu/display/COmanage/REST+API+v1>`__ is currently available.
 The base URL is the hostname of the COmanage registry service with ``/registry`` appended.
@@ -164,20 +189,26 @@ See :ref:`Numeric GIDs <gid>` for more details.
 
 .. _gid:
 
+Grouper REST API
+----------------
+
+Grouper supports a REST API.
+However, it appears to be very complex and documented primarily as a Java API.
+I was unable to locate a traditional REST API description for it.
+The API looks to be fully functional but it makes a number of unusual choices, such as ``T`` and ``F`` strings instead of proper booleans.
+
+Using the API appears to require a lot of reverse engineering from example traces.
+See, for instance, the `example of assigning an attribute value to a group <https://github.com/Internet2/grouper/blob/master/grouper-ws/grouper-ws/doc/samples/assignAttributesWithValue/WsSampleAssignAttributesWithValueRestLite_json.txt>`__.
+
 Numeric GIDs
-------------
+============
 
 Getting numeric GIDs into the LDAP entries for each group isn't well-supported by COmanage.
 The LDAP connector does not have an option to add arbitrary group identifiers to the group LDAP entry.
 There are a few possible options.
 
-Grouper
-"""""""
-
-A look at what capabilities Grouper has to assign GIDs and expose them via an API or via LDAP is upcoming, pending addition of Grouper to the test environment.
-
-Group REST API
-""""""""""""""
+COmanage group REST API
+-----------------------
 
 Arbitrary identifiers can be added to groups, so a group can be configured with an auto-incrementing unique identifier in the same way that we do for users, using a base number of 200000 instead of 100000 to keep the UIDs and GIDs distinct (allowing the UID to be used as the GID of the primary group).
 Although that identifier isn't exposed in LDAP, it can be read via the COmanage REST API using a URL such as::
@@ -190,7 +221,7 @@ Middleware running on the Rubin Science Platform could cache the GID information
 .. _voposixgroup:
 
 voPosixGroup
-""""""""""""
+------------
 
 Another option is to enable ``voPosixGroup`` and generate group IDs that way.
 However, that process is somewhat complex.
@@ -237,8 +268,15 @@ With a second UnixCluster and CO Service with short label "slac" to represent an
 
 UnixCluster object and UnixCluster Group objects and all the identifiers are usually established during an enrollment flow.
 
+Grouper
+-------
+
+Grouper does not appear to have any built-in support for assigning numeric GIDs to each group out of some range.
+Groups can be assigned arbitrary attributes that we define, so we can assign GIDs to groups via the API, but we would need to maintain the list of available GIDs and ensure there are no conflicts.
+Grouper also does not appear to care if the same attribute value is assigned to multiple groups, so we would need to handle uniqueness.
+
 Custom development
-""""""""""""""""""
+------------------
 
 We could enhance (or pay someone to enhance) the LDAP Provisioning Plugin to allow us to express an additional object class in the group tree in LDAP, containing a numeric GID identifier.
 
@@ -268,7 +306,10 @@ This should include:
 To reduce latency and load on the COmanage API, this service should cache those results for some to-be-determined period of time.
 We should consider having a mechanism for the user to invalidate the cache (such as on logout).
 
-This corresponds primarily to the ``/auth/api/v1/user-info`` route specified in SQR-049_, with the addition of email.
+Gafaelfawr will need to retrieve information about a user from this service to expose it in the headers that are passed as part of an authenticated request.
+This is how we pass metadata to services that are not Gafaelfawr-aware and willing to make their own API calls, or to services that should not receive delegated tokens.
+
+This corresponds primarily to the ``/auth/api/v1/user-info`` route specified in SQR-049_.
 
 This API service may also need to support integration with GitHub and with the OpenID Connect and LDAP provider used at the base and summit so that we can remove the remaining user metadata support in Gafaelfawr.
 Alternately, we could use COmanage for those environments as well, but that would likely not meet the off-line requirements for the summit environment, and there is merit in the flexibility to quickly stand up a Rubin Science Platform deployment using GitHub as the identity management system.
@@ -341,8 +382,6 @@ Since underscore (``_``) is not a valid character in usernames, this will avoid 
 Open questions
 ==============
 
-#. Determine how to manage and expose unique GIDs.
+- Can we get access to the raw affiliation information returned by CILogon?
 
-#. How can we define custom group attributes to store quota information?
-
-#. How do we get access to the Grouper web services API?
+- Can the "Invite a Collaborator" flow be modified to prompt the invited collaborator for their username?
