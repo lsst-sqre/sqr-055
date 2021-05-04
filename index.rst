@@ -200,6 +200,14 @@ The API looks to be fully functional but it makes a number of unusual choices, s
 Using the API appears to require a lot of reverse engineering from example traces.
 See, for instance, the `example of assigning an attribute value to a group <https://github.com/Internet2/grouper/blob/master/grouper-ws/grouper-ws/doc/samples/assignAttributesWithValue/WsSampleAssignAttributesWithValueRestLite_json.txt>`__.
 
+A sample Grouper API call:
+
+.. code-block:: console
+
+   $ curl --silent -u GrouperSystem:XXXXXXXX \
+     'https://group-registry-test.lsst.codes/grouper-ws/servicesRest/json/v2_5_000/groups/etc%3Asysadmingroup/members' \
+     | jq .
+
 Numeric GIDs
 ============
 
