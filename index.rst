@@ -435,3 +435,5 @@ Open COmanage work
 
 #. The approach of replacing the group name with a different identifier in order to apply name validation doesn't appear to work.
    There doesn't seem to be a mechanism to prompt the user for that identifier when creating the group, and the identifier, when manually added, doesn't seem to change the name of the group provisioned to LDAP.
+
+#. The 4.0.0 release of COmanage is supposed to resolve the duplicated user identities in the group management screen.
