@@ -18,6 +18,7 @@ Recommendations
 #. **Use ``voPosixGroup`` for numeric GIDs.**
    This assumes that we want to use COmanage to manage groups.
    The complexity level is unfortunate, but it appears to mostly be one-time configuration complexity, and there are substantial implementation advantages to supporting automatic assignment of new GIDs without having to write custom code.
+   The alternative would be to use a custom identifier, but since it can't be expressed in LDAP, this would require using the REST API to retrieve group data, which adds ongoing rather than one-time complexity.
 
 #. **Use LDAP as the primary API to retrieve user and group data.**
    Despite requiring an LDAP library dependency, this looks easier to use than the COmanage or Grouper APIs.
