@@ -15,7 +15,7 @@ Recommendations
    Grouper offers more features, but at the cost of additional user complexity, a UI that's not better than the COmanage UI, a less usable API, and additional integration and conceptual complexity.
    However, COmanage does not appear to provide usable name validation (see :ref:`group-name-validation`), which is an argument for either writing a plugin that would do so or managing groups ourselves rather than using either Grouper or COmanage.
 
-#. **Use ``voPosixGroup`` for numeric GIDs.**
+#. **Use voPosixGroup for numeric GIDs.**
    This assumes that we want to use COmanage to manage groups.
    The complexity level is unfortunate, but it appears to mostly be one-time configuration complexity, and there are substantial implementation advantages to supporting automatic assignment of new GIDs without having to write custom code.
    The alternative would be to use a custom identifier, but since it can't be expressed in LDAP, this would require using the REST API to retrieve group data, which adds ongoing rather than one-time complexity.
