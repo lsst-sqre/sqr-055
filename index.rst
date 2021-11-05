@@ -85,7 +85,9 @@ We use the UID as a username, and this restricts the usernames to the valid valu
 Group name validation
 ---------------------
 
-Ensure the `Group Name Filter Plugin`_ is also enabled.  Then:
+One approach is to use the `Group Name Filter Plugin`_.
+Ensure it is also enabled.
+Then:
 
 #. Go to Configuration → Extended Types and add a new type
 #. Set the name to "groupname" and the display name to "Group name"
@@ -102,9 +104,14 @@ This essentially replaces the group name with an identifier and requires that id
 
 .. _Group Name Filter Plugin: https://spaces.at.internet2.edu/display/COmanage/Group+Name+Filter+Plugin
 
-Unfortunately, this doesn't seem to work.
-No changes appear to the group name in LDAP.
-It also doesn't change the group creation flow; one has to explicitly go into the group and add the new Group name identifier.
+However, this doesn't change the group creation flow.
+One has to explicitly go into the group and add the new Group name identifier.
+
+A better approach would be a CakePHP plugin that intercepts the save call and can enforce a group naming convention.
+This would use the `CakePHP Event System`_.
+This plugin does not already exist, but the CILogon folks have a previously-written plugin that is very similar and could adapt it to our needs.
+
+.. _CakePHP Event System: https://book.cakephp.org/2/en/core-libraries/events.html
 
 Dashboard
 ---------
