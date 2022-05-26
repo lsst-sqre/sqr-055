@@ -100,6 +100,8 @@ Add username to enrollment flow
 
 #. Edit "Self Signup With Approval" enrollment flow
 #. Edit its enrollment attributes
+#. Edit the Name attribute, change its attribute definition to Preferred rather than Official, and make sure that only Given Name is required
+#. Edit the Email attribute and change its attribute definition to Preferred rather than Official
 #. Add username with a suitable description.
    Allow the user to change it during enrollment.
    Set the type of the field to CO Person, Identifier, UID.
