@@ -126,10 +126,10 @@ Ensure the `Regex Identifier Validator Plugin`_ is enabled.  Then:
 
        /^[a-z0-9](?:[a-z0-9]|-[a-z0-9])*[a-z](?:[a-z0-9]|-[a-z0-9])*$/
 
-This implements the restrictions on valid usernames documented in `DMTN-255`_.
+This implements the restrictions on valid usernames documented in `DMTN-225`_.
 
 .. _Regex Identifier Validator Plugin: https://spaces.at.internet2.edu/display/COmanage/Regex+Identifier+Validator+Plugin
-.. _DMTN-255: https://dmtn-225.lsst.io/
+.. _DMTN-225: https://dmtn-225.lsst.io/
 
 .. _group-name-validation:
 
@@ -152,7 +152,7 @@ Then:
        /^g_[a-z0-9._-]{1,30}$/
 
 This essentially replaces the group name with an identifier and requires that identifier to start with ``g_``, which will avoid conflicts between usernames and groups.
-`DMTN-255`_ defines the constraints on group names.
+`DMTN-225`_ defines the constraints on group names.
 
 .. _Group Name Filter Plugin: https://spaces.at.internet2.edu/display/COmanage/Group+Name+Filter+Plugin
 
