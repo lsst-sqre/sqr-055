@@ -8,34 +8,92 @@ Abstract
 We plan to use COmanage as the identity management platform for the Rubin Science Platform.
 This document describes how to configure COmanage for that purpose and proposes a design for the necessary integration services to retrieve user metadata, group membership, and group metadata.
 
-Recommendations
-===============
+Decisions
+=========
 
 #. **Use COmanage for group management.**
    Grouper offers more features, but at the cost of additional user complexity, a UI that's not better than the COmanage UI, a less usable API, and additional integration and conceptual complexity.
    However, COmanage does not appear to provide usable name validation (see :ref:`group-name-validation`), which is an argument for either writing a plugin that would do so or managing groups ourselves rather than using either Grouper or COmanage.
 
-#. **Use voPosixGroup for numeric GIDs.**
-   This assumes that we want to use COmanage to manage groups.
-   The complexity level is unfortunate, but it appears to mostly be one-time configuration complexity, and there are substantial implementation advantages to supporting automatic assignment of new GIDs without having to write custom code.
-   The alternative would be to use a custom identifier, but since it can't be expressed in LDAP, this would require using the REST API to retrieve group data, which adds ongoing rather than one-time complexity.
+#. **Assign UIDs and GIDs outside of COmanage.**
+   It's possible to manage both inside COmanage, using ``voPosixGroup`` to do GID assignment and an auto-incrementing unique ID to do UID assignment (as a string that would require some postprocessing).
+   However, this doesn't let us enforce range boundaries or use a different range for bot users.
+   We will instead use Google Firebase to store UIDs and GIDs.
 
 #. **Use LDAP as the primary API to retrieve user and group data.**
    Despite requiring an LDAP library dependency, this looks easier to use than the COmanage or Grouper APIs.
-   It will also be the primary source of GIDs given the use of ``voPosixGroup``.
 
 #. **Implement quota rules outside of COmanage.**
    We have to maintain a local database anyway for the token system and can put quota metadata in the same place.
    Neither COmanage nor Grouper easily support quota math.
    The Grouper API could allow us to use it as a backing store for quota data, but the API is sufficiently hard to use that this isn't an attractive option.
 
-#. **Write a local service to return user metadata.**
-   That API service gather data from LDAP and provide the equivalent of the current Gafaelfawr ``/auth/api/v1/user-info`` endpoint, which returns full name, email address, numeric UID, and group information (names and GIDs).
-   That service can be extended to support quotas when those are added.
-   Gafaelfawr will then query that service as part of the ``/auth`` endpoint (probably with local caching for performance).
+#. **Manage user metadata in Gafaelfawr.**
+   `Gafaelfawr`_ will gather data from LDAP on demand, with a local cache to reduce the LDAP load, and merge that with data stored with the token.
+   This can be extended to support quotas when those are added.
+
+.. _Gafaelfawr: https://gafaelfawr.lsst.io/
 
 Configuration
 =============
+
+Configure unique attribute for each person
+------------------------------------------
+
+CILogon generates a unique identifier for every authentication identity.
+COmanage may map multiple authentication identities to the same person record (so that someone can log in via both GitHub and their local university, for example, which are separate authentication identities).
+To resolve a login identity to a person in LDAP, those authentication identities must be present in the LDAP record.
+The recommended attribute in which to store them is ``uid``, which is multivalued.
+
+This means that a different attribute must be used for the unique identifier for each person.
+That attribute must not be multivalued.
+We use ``LSST Registry ID`` as that attribute.
+
+#. Go to Configuration → Extended Types
+#. Add an extended type:
+   - Name: ``lsstregistryid``
+   - Display Name: ``LSST Registry ID``
+#. Go to Configuration → Identifier Assignments
+#. Create an identifier assignment:
+   - Description: ``LSST Registry ID``
+   - Context: ``CO Person``
+   - Type: ``LSST Registry ID`` (do not check the Login box)
+   - Algorithm: ``Sequential``
+   - Format: ``LSST(#)`` (via "Select a common pattern")
+   - Permitted Characters: ``AlphaNumeric Only``
+   - Minimum: ``1000000`` (this doesn't really matter but it will make all the identifiers the same length)
+
+Configure LDAP provisioning target
+----------------------------------
+
+#. Go to Configuration → Provisioning Targets and configure Primary LDAP
+#. Set "People DN Identifier Type" to ``LSST Registry ID``
+#. Set "People DN Attribute Name" to ``voPersonId``
+#. Go down to the attribute configuration
+#. Enable ``displayName``, disable ``givenName``, and set it to Preferred
+#. Change ``mail`` to Preferred
+#. Change ``uid`` to OIDC sub and select the box for "Use value from Organizational Identity"
+#. Enable ``groupOfNames`` objectclass
+#. Enable ``isMemberOf`` in the ``eduMember`` objectclass
+#. Enable ``hasMember`` in the ``eduMember`` objectclass and set it to UID
+#. Enable ``voPerson`` objectclass
+   #. Enable ``voPersonApplicationUID`` and set it to UID
+   #. Enable ``voPersonID`` and set it to LSST Registry ID
+   #. Enable ``voPersonSoRID`` and set it to System of Record ID
+#. Save and then Reprovision All to update existing records
+
+OpenID Connect client
+---------------------
+
+#. Go to Configuration → OIDC Clients
+#. Add a new client
+#. Set the name to a reasonable short description of the deployment
+#. Set the home URL to the top-level URL of the deployment
+#. Set the callback to the home URL with ``/login`` appended (the Gafaelfawr callback URL)
+#. Enable the ``org.cilogon.userinfo`` scope
+#. Add an LDAP to claim mapping
+   - LDAP attribute name: ``voPersonApplicationUID``
+   - OIDC Claim Name: ``username``
 
 Add username to enrollment flow
 -------------------------------
@@ -53,18 +111,6 @@ If we do, we'll need a separate enrollment flow plugin (which does not exist as 
 
 .. _CO-1002: https://todos.internet2.edu/browse/CO-1002
 
-Configure LDAP provisioning target
-----------------------------------
-
-#. Go to Configuration → Provisioning Targets and configure Primary LDAP
-#. Go down to the attribute configuration
-#. Enable ``displayName``, disable ``givenName``, and set it to Official
-#. Change ``uid`` to use the UID identifier
-#. Enable ``groupOfNames`` objectclass
-#. Enable ``hasMember`` in the ``eduMember`` objectclass
-#. Enable ``voPerson`` and set ``voPersonID`` to the LSST Registry ID and ``voPersonSoRID`` to System of Record ID
-#. Save and then Reprovision All to update existing records
-
 Username validation
 -------------------
 
@@ -76,9 +122,10 @@ Ensure the `Regex Identifier Validator Plugin`_ is enabled.  Then:
 
        /^[a-z0-9](?:[a-z0-9]|-[a-z0-9])*[a-z](?:[a-z0-9]|-[a-z0-9])*$/
 
-We use the UID as a username, and this restricts the usernames to the valid values for a GitHub username while disallowing single-character usernames and usernames that are entirely numbers.
+This implements the restrictions on valid usernames documented in `DMTN-255`_.
 
 .. _Regex Identifier Validator Plugin: https://spaces.at.internet2.edu/display/COmanage/Regex+Identifier+Validator+Plugin
+.. _DMTN-255: https://dmtn-225.lsst.io/
 
 .. _group-name-validation:
 
@@ -98,9 +145,10 @@ Then:
 #. Set the name to "Username validation", the plugin to RegexIdentifierValidator, and the attribute to UID, and click Add
 #. Set the regular expression to::
 
-       /^g_[a-z][a-z0-9_-]*$/
+       /^g_[a-z0-9._-]{1,30}$/
 
 This essentially replaces the group name with an identifier and requires that identifier to start with ``g_``, which will avoid conflicts between usernames and groups.
+`DMTN-255`_ defines the constraints on group names.
 
 .. _Group Name Filter Plugin: https://spaces.at.internet2.edu/display/COmanage/Group+Name+Filter+Plugin
 
@@ -119,8 +167,11 @@ Dashboard
 COmanage comes with a bunch of default components that we don't want to use (announcement feeds, forums, etc.).
 We will want to edit the default dashboard to remove those widges and replace them with widges for group management and personal identity management (if there are any applicable ones).
 
+Other configurations considered
+===============================
+
 Group management
-================
+----------------
 
 We have two primary options for managing groups via COmanage: using COmanage Registry groups, or using Grouper.
 In both cases, there are limitations on how much we can customize the UI without a lot of development.
@@ -129,7 +180,7 @@ Quota calculation is not directly supported with either system and in either cas
 Recording quota information for groups locally and using the group API (or LDAP) to synchronize the list of groups with the canonical list looks like the easiest path.
 
 COmanage Registry groups
-------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 Advantages:
 
@@ -145,7 +196,7 @@ Disadvantages:
 - There currently is a rendering bug that causes each person to show up three times when editing the group membership, but this will be fixed in the 4.0.0 release due in the second quarter of 2021
 
 Grouper
--------
+^^^^^^^
 
 Advantages:
 
@@ -160,15 +211,19 @@ Disadvantages:
 - Users have to interact with two UIs, the COmanage one for identities and the Grouper UI for group management
 - No support for automatic GID generation
 
+.. _gid:
+
 Numeric GIDs
-============
+------------
 
 Getting numeric GIDs into the LDAP entries for each group isn't well-supported by COmanage.
 The LDAP connector does not have an option to add arbitrary group identifiers to the group LDAP entry.
-There are a few possible options.
+
+We decided to avoid this problem by assigning UIDs and GIDs outside of COmanage.
+Here are a few other possible options we considered.
 
 COmanage group REST API
------------------------
+^^^^^^^^^^^^^^^^^^^^^^^
 
 Arbitrary identifiers can be added to groups, so a group can be configured with an auto-incrementing unique identifier in the same way that we do for users, using a base number of 200000 instead of 100000 to keep the UIDs and GIDs distinct (allowing the UID to be used as the GID of the primary group).
 Although that identifier isn't exposed in LDAP, it can be read via the COmanage REST API using a URL such as::
@@ -181,7 +236,7 @@ Middleware running on the Rubin Science Platform could cache the GID information
 .. _voposixgroup:
 
 voPosixGroup
-------------
+^^^^^^^^^^^^
 
 Another option is to enable ``voPosixGroup`` and generate group IDs that way.
 However, that process is somewhat complex.
@@ -229,7 +284,7 @@ With a second UnixCluster and CO Service with short label "slac" to represent an
 UnixCluster object and UnixCluster Group objects and all the identifiers are usually established during an enrollment flow.
 
 Grouper
--------
+^^^^^^^
 
 Grouper does not have built-in support for assigning numeric GIDs to each group out of some range.
 It is possible to cobble something together using the ``idIndex`` that Grouper generates (see `this discussion <https://lists.internet2.edu/sympa/arc/grouper-users/2017-01/msg00087.html>`__ and `this documentation <https://spaces.at.internet2.edu/display/Grouper/Integer+IDs+on+Grouper+objects>`__), but it would require some development.
@@ -238,18 +293,12 @@ Alternately, groups can be assigned arbitrary attributes that we define, so we c
 Grouper also does not appear to care if the same attribute value is assigned to multiple groups, so we would need to handle uniqueness.
 
 Custom development
-------------------
+^^^^^^^^^^^^^^^^^^
 
 We could enhance (or pay someone to enhance) the LDAP Provisioning Plugin to allow us to express an additional object class in the group tree in LDAP, containing a numeric GID identifier.
 
 API
 ===
-
-COmanage REST API
------------------
-
-Only the `REST v1 API <https://spaces.at.internet2.edu/display/COmanage/REST+API+v1>`__ is currently available.
-The base URL is the hostname of the COmanage registry service with ``/registry`` appended.
 
 LDAP
 ----
@@ -267,6 +316,7 @@ The password is in 1Password under the hostname of the COmanage registry.
 An example user::
 
     dn: voPersonID=LSST100006,ou=people,o=LSST,o=CO,dc=lsst,dc=org
+    displayName: Russ Allbery
     sn: Allbery
     cn: Russ Allbery
     objectClass: person
@@ -274,33 +324,43 @@ An example user::
     objectClass: inetOrgPerson
     objectClass: eduMember
     objectClass: voPerson
-    displayName: Russ Allbery
-    mail: rra@lsst.org
-    uid: rra
+    uid: http://cilogon.org/serverA/users/31388556
+    uid: http://cilogon.org/serverA/users/15423111
     isMemberOf: CO:members:all
     isMemberOf: CO:members:active
     isMemberOf: CO:admins
-    isMemberOf: science-platform-idf-dev
+    isMemberOf: g_science-platform-idf-dev
+    isMemberOf: g_test-group
+    voPersonApplicationUID: rra
     voPersonID: LSST100006
     voPersonSoRID: http://cilogon.org/serverA/users/31388556
 
-The ``voPersonID`` without the ``LSST`` prefix should be usable as a numeric UID.
-
 An example group::
 
-    dn: cn=science-platform-idf-dev,ou=groups,o=LSST,o=CO,dc=lsst,dc=org
-    cn: science-platform-idf-dev
+    dn: cn=g_science-platform-idf-dev,ou=groups,o=LSST,o=CO,dc=lsst,dc=org
+    cn: g_science-platform-idf-dev
     member: voPersonID=LSST100006,ou=people,o=LSST,o=CO,dc=lsst,dc=org
     member: voPersonID=LSST100007,ou=people,o=LSST,o=CO,dc=lsst,dc=org
+    member: voPersonID=LSST100008,ou=people,o=LSST,o=CO,dc=lsst,dc=org
+    member: voPersonID=LSST100010,ou=people,o=LSST,o=CO,dc=lsst,dc=org
+    member: voPersonID=LSST100012,ou=people,o=LSST,o=CO,dc=lsst,dc=org
+    member: voPersonID=LSST100013,ou=people,o=LSST,o=CO,dc=lsst,dc=org
     objectClass: groupOfNames
     objectClass: eduMember
     hasMember: rra
     hasMember: thoron
+    hasMember: frossie
+    hasMember: cbanek
+    hasMember: afausti
+    hasMember: simon.krughoff
 
-Note that the group entry in LDAP doesn't contain numeric GID information.
-See :ref:`Numeric GIDs <gid>` for more details.
+COmanage REST API
+-----------------
 
-.. _gid:
+Only the `REST v1 API <https://spaces.at.internet2.edu/display/COmanage/REST+API+v1>`__ is currently available.
+The base URL is the hostname of the COmanage registry service with ``/registry`` appended.
+
+We currently don't expect to use the REST API.
 
 Grouper REST API
 ----------------
@@ -321,41 +381,23 @@ A sample Grouper API call:
      'https://group-registry-test.lsst.codes/grouper-ws/servicesRest/json/v2_5_000/groups/etc%3Asysadmingroup/members' \
      | jq .
 
+We didn't investigate this further since we decided against using Grouper for group management.
+
 Integration
 ===========
 
-We will need to write the following services to integrate with COmanage.
+On the Rubin Science Platform side, we will need to implement the following.
 
-User information API
---------------------
+User information
+----------------
 
-Gafaelfawr is currently temporarily recording and returning metadata about a user, such as full name, numeric UID, and group information, based on the CILogon assertions.
-(See SQR-049_ for more details.)
-One goal of adopting COmanage as the identity management system is to drop this information from Gafaelfawr and retrieve it directly from COmanage.
+`Gafaelfawr`_ will be set up to use OpenID Connect for authentication, using the OIDC client information configured above.
+It will take the authenticated username from the ``username`` claim of the token, and then look up other information about the user (group membership, full name, email address) from LDAP on demand with a short-lived cache.
+(UIDs and GIDs will be handled externally from COmanage.)
+
+See `SQR-049`_ for more information about the Gafaelfawr API.
 
 .. _SQR-049: https://sqr-049.lsst.io/
-
-This will require a new internal API service in the Rubin Science Platform.
-Services can authenticate it using a Gafaelfawr token and retrieve metadata about the user.
-This should include:
-
-* Full name
-* Primary email address
-* Numeric UID
-* Group membership with numeric GIDs for each group
-
-To reduce latency and load on the COmanage API, this service should cache those results for some to-be-determined period of time.
-We should consider having a mechanism for the user to invalidate the cache (such as on logout).
-
-Gafaelfawr will need to retrieve information about a user from this service to expose it in the headers that are passed as part of an authenticated request.
-This is how we pass metadata to services that are not Gafaelfawr-aware and willing to make their own API calls, or to services that should not receive delegated tokens.
-
-This corresponds primarily to the ``/auth/api/v1/user-info`` route specified in SQR-049_.
-
-This API service may also need to support integration with GitHub and with the OpenID Connect and LDAP provider used at the base and summit so that we can remove the remaining user metadata support in Gafaelfawr.
-Alternately, we could use COmanage for those environments as well, but that would likely not meet the off-line requirements for the summit environment, and there is merit in the flexibility to quickly stand up a Rubin Science Platform deployment using GitHub as the identity management system.
-
-It appears the preferred interface in COmanage to pull this type of user metadata is LDAP.
 
 Full name should always be ``displayName`` and we should not use the other LDAP attributes that attempt to parse a name into components.
 They do not internationalize well.
@@ -371,20 +413,8 @@ We can initiate that flow from the landing page or from Gafaelfawr if we detect 
 It's possible to then configure a return URL to which the user goes after enrollment is complete, but that's probably not that useful when we're using an approval flow.
 We will need to customize the email messages and web pages presented as part of the approval flow.
 
-User-chosen usernames must meet the following requirements (the same as GitHub):
-
-* Only alphanumerics and hyphen
-* No two consecutive hyphens
-* Username may not start or end with a hyphen
-* Username may not be all digits
-
-This can be enforced by COmanage.
-
-When a new user first accesses the Rubin Science Platform, we will need to route them through the onboarding flow, and then may need to make additional changes to their record via the COmanage API such as adding them to groups.
-This can be integrated with the onboarding service described in SQR-052_.
-This service would have a privileged API token for the Rubin Science Platform COmanage environment.
-
-.. _SQR-052: https://sqr-052.lsst.io/
+It's not clear yet whether we will need to automate additional changes to a person's record after onboarding, such as adding them to groups, or if this will be handled manually during the approval process.
+If we do need to automate this, we may need to do that via the COmanage API.
 
 The web pages shown during this onboarding flow are controlled by the style information in the `lsst-registry-landing <https://github.com/cilogon/lsst-registry-landing>`__ project on GitHub.
 
@@ -394,15 +424,6 @@ However, sites with anti-virus integrated with their email system (such as AURA)
 Since no authentication or confirmation is required when following the link, this means that any email address at such a domain is automatically confirmed without any human interaction, posing both a security flaw and a UI problem because the user will get a confusing error message when they follow that link manually.
 
 We will need to work with the COmanage maintainers to either require authentication to confirm the email address or to require a button that one has to click rather than doing the confirmation automatically.
-
-User authentication
--------------------
-
-We will point Gafaelfawr_ for a Rubin Science Platform instance directly at CILogon and not configure CILogon to know about the contents of COmanage.
-It will therefore be the responsibility of Gafaelfawr, when processing a user login via CILogon, to confirm via the user information API that the user has a valid account and to send them through the onboarding flow if they don't.
-Gafaelfawr will have the CILogon unique identifier, so the user information API will need to support queries based on that and return the appropriate username or an error if the user is not registered.
-
-.. _Gafaelfawr: https://gafaelfawr.lsst.io/
 
 User authorization
 ------------------
@@ -423,24 +444,14 @@ User self groups
 Each user will appear to the Rubin Science Platform to also be the sole member of a group with the same name as the username and the same GID as the UID.
 This is a requirement for POSIX file systems underlying the Notebook Aspect and for the Butler service (see DMTN-182_ for the latter).
 
-These groups will not be managed in COmanage or Grouper.
-They will be synthesized by the group API maintained as part of the Science Platform.
-
 .. _DMTN-182: https://dmtn-182.lsst.io/
 
-Group naming
-------------
-
-Since each username must also correspond to a (synthesized) group name, we must avoid naming conflicts between users and groups.
-We will do this by requiring all self-service group names start with ``g_``.
-Since underscore (``_``) is not a valid character in usernames, this will avoid any conflicts.
+These groups will not be managed in COmanage or Grouper.
+They will be synthesized by `Gafaelfawr`_ in response to queries about the user.
 
 Open COmanage work
 ==================
 
 #. Add a button or require authentication before confirming the email address to avoid a bug in the onboarding flow.
 
-#. The approach of replacing the group name with a different identifier in order to apply name validation doesn't appear to work.
-   There doesn't seem to be a mechanism to prompt the user for that identifier when creating the group, and the identifier, when manually added, doesn't seem to change the name of the group provisioned to LDAP.
-
-#. The 4.0.0 release of COmanage is supposed to resolve the duplicated user identities in the group management screen.
+#. Write a CakePHP plugin to enforce a group naming convention.
