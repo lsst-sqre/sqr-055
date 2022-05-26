@@ -15,7 +15,7 @@ Decisions
 
 #. **Use COmanage for group management.**
    Grouper offers more features, but at the cost of additional user complexity, a UI that's not better than the COmanage UI, a less usable API, and additional integration and conceptual complexity.
-   However, COmanage does not appear to provide usable name validation (see :ref:`group-name-validation`), which is an argument for either writing a plugin that would do so or managing groups ourselves rather than using either Grouper or COmanage.
+   We will need to add a plugin to do group name validation (see :ref:`group-name-validation`).
 
 #. **Assign UIDs and GIDs outside of COmanage.**
    It's possible to manage both inside COmanage, using ``voPosixGroup`` to do GID assignment and an auto-incrementing unique ID to do UID assignment (as a string that would require some postprocessing).
