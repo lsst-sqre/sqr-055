@@ -5,8 +5,10 @@
 Abstract
 ========
 
-We plan to use COmanage as the identity management platform for the Rubin Science Platform.
-This document describes how to configure COmanage for that purpose and proposes a design for the necessary integration services to retrieve user metadata, group membership, and group metadata.
+Rubin Observatory plans to use COmanage as the identity management platform for the Rubin Science Platform.
+Group membership will be maintained inside COmanage.
+UID and GID assignment will be done outside of COmanage by Gafaelfawr, the authentication and authorization component of the Rubin Science Platform.
+This document provides a step-by-step how to configure COmanage for that purpose, discusses alternate configuration approaches that were discarded, discusses integration requirements, and summarizes remaining COmanage work.
 
 Decisions
 =========
