@@ -20,7 +20,7 @@ Decisions
 #. **Assign UIDs and GIDs outside of COmanage.**
    It's possible to manage both inside COmanage, using ``voPosixGroup`` to do GID assignment and an auto-incrementing unique ID to do UID assignment (as a string that would require some postprocessing).
    However, this doesn't let us enforce range boundaries or use a different range for bot users.
-   We will instead use Google Firebase to store UIDs and GIDs.
+   We will instead use Google Firestore to store UIDs and GIDs.
 
 #. **Use LDAP as the primary API to retrieve user and group data.**
    Despite requiring an LDAP library dependency, this looks easier to use than the COmanage or Grouper APIs.
@@ -31,7 +31,7 @@ Decisions
    The Grouper API could allow us to use it as a backing store for quota data, but the API is sufficiently hard to use that this isn't an attractive option.
 
 #. **Manage user metadata in Gafaelfawr.**
-   `Gafaelfawr`_ will gather data from LDAP on demand, with a local cache to reduce the LDAP load, and merge that with data stored with the token.
+   Gafaelfawr_ will gather data from LDAP on demand, with a local cache to reduce the LDAP load, and merge that with data stored with the token.
    This can be extended to support quotas when those are added.
 
 .. _Gafaelfawr: https://gafaelfawr.lsst.io/
@@ -65,8 +65,20 @@ We use ``LSST Registry ID`` as that attribute.
    - Permitted Characters: ``AlphaNumeric Only``
    - Minimum: ``1000000`` (this doesn't really matter but it will make all the identifiers the same length)
 
+.. _ldap-provisioning:
+
 Configure LDAP provisioning target
 ----------------------------------
+
+Gafaelfawr requires the bare usernames be listed in an attribute in each group record so that they can be searched for.
+This is supported by the ``eduMember`` object class and the ``hasMember`` attribute.
+
+We also need to put the user's canonical username (which COmanage calls the UID) in some attribute in the person record so that we can query on it.
+We use ``voPersonApplicationUID`` for that purpose.
+Note that this is different than ``uid`` (the CILogon federated identity strings) and the unique attribute for each person used in the person data hierarchy (``voPersonID``).
+
+Note that we use the preferred email and full name, not the official one.
+This must match the settings used during :ref:`enrollment flow <enrollment-flow>`.
 
 #. Go to Configuration → Provisioning Targets and configure Primary LDAP
 #. Set "People DN Identifier Type" to ``LSST Registry ID``
@@ -87,6 +99,9 @@ Configure LDAP provisioning target
 OpenID Connect client
 ---------------------
 
+The important configuration setting here is to map ``voPersonApplicationUID`` to the ``username`` claim.
+This is used by Gafaelfawr_ to get the username after authentication or, if that claim is not set, to know that the user is not enrolled in COmanage and to redirect to an enrollment flow.
+
 #. Go to Configuration → OIDC Clients
 #. Add a new client
 #. Set the name to a reasonable short description of the deployment
@@ -97,8 +112,13 @@ OpenID Connect client
    - LDAP attribute name: ``voPersonApplicationUID``
    - OIDC Claim Name: ``username``
 
+.. _enrollment-flow:
+
 Add username to enrollment flow
 -------------------------------
+
+Note that we use the preferred email and full name, not the official one.
+This must match the settings used during :ref:`LDAP provisioning <ldap-provisioning>`.
 
 #. Edit "Self Signup With Approval" enrollment flow
 #. Edit its enrollment attributes
@@ -109,7 +129,7 @@ Add username to enrollment flow
    Set the type of the field to CO Person, Identifier, UID.
    Mark as required.
 
-This does not work for the "Invite a collaborator" enrollment flow, since the person creating the invite is prompted for the username (this is `CO-1002`_).
+This does not work for the "Invite a collaborator" enrollment flow, since the person creating the invite is prompted for the username (this is CO-1002_).
 We probably won't need that flow.
 If we do, we'll need a separate enrollment flow plugin (which does not exist as a turnkey configuration, but there are examples to work from) to collect the username after email validation.
 
@@ -356,7 +376,7 @@ An example group::
     hasMember: frossie
     hasMember: cbanek
     hasMember: afausti
-    hasMember: simon.krughoff
+    hasMember: simonkrughoff
 
 COmanage REST API
 -----------------
@@ -395,13 +415,9 @@ On the Rubin Science Platform side, we will need to implement the following.
 User information
 ----------------
 
-`Gafaelfawr`_ will be set up to use OpenID Connect for authentication, using the OIDC client information configured above.
+Gafaelfawr_ will be set up to use OpenID Connect for authentication, using the OIDC client information configured above.
 It will take the authenticated username from the ``username`` claim of the token, and then look up other information about the user (group membership, full name, email address) from LDAP on demand with a short-lived cache.
-(UIDs and GIDs will be handled externally from COmanage.)
-
-See `SQR-049`_ for more information about the Gafaelfawr API.
-
-.. _SQR-049: https://sqr-049.lsst.io/
+(UIDs and GIDs will be handled externally from COmanage in Firestore.)
 
 Full name should always be ``displayName`` and we should not use the other LDAP attributes that attempt to parse a name into components.
 They do not internationalize well.
@@ -415,12 +431,17 @@ To initiate that flow, we send the user to a specific URL at the COmanage regist
 We can initiate that flow from the landing page or from Gafaelfawr if we detect that the user is authenticated but not enrolled in COmanage.
 
 It's possible to then configure a return URL to which the user goes after enrollment is complete, but that's probably not that useful when we're using an approval flow.
+
 We will need to customize the email messages and web pages presented as part of the approval flow.
+This has not yet been done.
 
 It's not clear yet whether we will need to automate additional changes to a person's record after onboarding, such as adding them to groups, or if this will be handled manually during the approval process.
 If we do need to automate this, we may need to do that via the COmanage API.
 
 The web pages shown during this onboarding flow are controlled by the style information in the `lsst-registry-landing <https://github.com/cilogon/lsst-registry-landing>`__ project on GitHub.
+
+Email verification issue
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 Currently, user onboarding has a bug: After choosing their name, email, and username, the user is sent an email message to confirm that they have control over that email address.
 The link in the mail message has a one-time code in it, and confirms the email address when followed.
@@ -451,7 +472,37 @@ This is a requirement for POSIX file systems underlying the Notebook Aspect and 
 .. _DMTN-182: https://dmtn-182.lsst.io/
 
 These groups will not be managed in COmanage or Grouper.
-They will be synthesized by `Gafaelfawr`_ in response to queries about the user.
+They will be synthesized by Gafaelfawr_ in response to queries about the user.
+(This work is not yet done.)
+
+Example Gafaelfawr configuration
+--------------------------------
+
+Here is an example configuration of the Gafaelfawr Helm chart to use CILogon and COmanage.
+This is suitable for the ``values-*.yaml`` file in Phalanx_.
+
+.. _Phalanx: https://phalanx.lsst.io/
+
+.. code-block:: yaml
+
+   cilogon:
+     clientId: "cilogon:/client_id/46f9ae932fd30e9fb1b246972a3c0720"
+     enrollmentUrl: "https://registry-test.lsst.codes/registry/co_petitions/start/coef:6"
+     usernameClaim: "username"
+
+   firestore:
+     project: "rsp-firestore-dev-31c4"
+
+   ldap:
+     url: "ldaps://ldap-test.cilogon.org"
+     userDn: "uid=readonly_user,ou=system,o=LSST,o=CO,dc=lsst,dc=org"
+     groupBaseDn: "ou=groups,o=LSST,o=CO,dc=lsst,dc=org"
+     groupObjectClass: "eduMember"
+     groupMemberAttr: "hasMember"
+     userBaseDn: "ou=people,o=LSST,o=CO,dc=lsst,dc=org"
+     userSearchAttr: "voPersonApplicationUID"
+
+This uses the CILogon test LDAP server (a production configuration will probably use a different LDAP server) and links to an enrollment flow in a test version of COmanage.
 
 Open COmanage work
 ==================
