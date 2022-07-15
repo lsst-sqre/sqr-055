@@ -25,7 +25,7 @@ Decisions
 
 #. **Use COmanage for group management.**
    Grouper offers more features, but at the cost of additional user complexity, a UI that's not better than the COmanage UI, a less usable API, and additional integration and conceptual complexity.
-   We will need to add a plugin to do group name validation (see :ref:`group-name-validation`).
+   We will need to add a plugin to do group name validation (see :ref:`Group name validation <group-name-validation>`).
 
 #. **Assign UIDs and GIDs outside of COmanage.**
    It's possible to manage both inside COmanage, using ``voPosixGroup`` to do GID assignment and an auto-incrementing unique ID to do UID assignment (as a string that would require some postprocessing).
@@ -61,12 +61,17 @@ This means that a different attribute must be used for the unique identifier for
 That attribute must not be multivalued.
 We use ``LSST Registry ID`` as that attribute.
 
+.. rst-class:: compact
+
 #. Go to Configuration → Extended Types
 #. Add an extended type:
+
    - Name: ``lsstregistryid``
    - Display Name: ``LSST Registry ID``
+
 #. Go to Configuration → Identifier Assignments
 #. Create an identifier assignment:
+
    - Description: ``LSST Registry ID``
    - Context: ``CO Person``
    - Type: ``LSST Registry ID`` (do not check the Login box)
@@ -90,6 +95,8 @@ Note that this is different than ``uid`` (the CILogon federated identity strings
 Note that we use the preferred email and full name, not the official one.
 This must match the settings used during :ref:`enrollment flow <enrollment-flow>`.
 
+.. rst-class:: compact
+
 #. Go to Configuration → Provisioning Targets and configure Primary LDAP
 #. Set "People DN Identifier Type" to ``LSST Registry ID``
 #. Set "People DN Attribute Name" to ``voPersonId``
@@ -101,9 +108,11 @@ This must match the settings used during :ref:`enrollment flow <enrollment-flow>
 #. Enable ``isMemberOf`` in the ``eduMember`` objectclass
 #. Enable ``hasMember`` in the ``eduMember`` objectclass and set it to UID
 #. Enable ``voPerson`` objectclass
+
    #. Enable ``voPersonApplicationUID`` and set it to UID
    #. Enable ``voPersonID`` and set it to LSST Registry ID
    #. Enable ``voPersonSoRID`` and set it to System of Record ID
+
 #. Save and then Reprovision All to update existing records
 
 OpenID Connect client
@@ -112,6 +121,8 @@ OpenID Connect client
 The important configuration setting here is to map ``voPersonApplicationUID`` to the ``username`` claim.
 This is used by Gafaelfawr_ to get the username after authentication or, if that claim is not set, to know that the user is not enrolled in COmanage and to redirect to an enrollment flow.
 
+.. rst-class:: compact
+
 #. Go to Configuration → OIDC Clients
 #. Add a new client
 #. Set the name to a reasonable short description of the deployment
@@ -119,6 +130,7 @@ This is used by Gafaelfawr_ to get the username after authentication or, if that
 #. Set the callback to the home URL with ``/login`` appended (the Gafaelfawr callback URL)
 #. Enable the ``org.cilogon.userinfo`` scope
 #. Add an LDAP to claim mapping
+
    - LDAP attribute name: ``voPersonApplicationUID``
    - OIDC Claim Name: ``username``
 
@@ -129,6 +141,8 @@ Add username to enrollment flow
 
 Note that we use the preferred email and full name, not the official one.
 This must match the settings used during :ref:`LDAP provisioning <ldap-provisioning>`.
+
+.. rst-class:: compact
 
 #. Edit "Self Signup With Approval" enrollment flow
 #. Edit its enrollment attributes
@@ -150,6 +164,8 @@ Username validation
 
 Ensure the `Regex Identifier Validator Plugin`_ is enabled.  Then:
 
+.. rst-class:: compact
+
 #. Go to Configuration → Identifier Validators and add a new validator
 #. Set the name to "Username validation", the plugin to RegexIdentifierValidator, and the attribute to UID, and click Add
 #. Set the regular expression to::
@@ -169,6 +185,8 @@ Group name validation
 One approach is to use the `Group Name Filter Plugin`_.
 Ensure it is also enabled.
 Then:
+
+.. rst-class:: compact
 
 #. Go to Configuration → Extended Types and add a new type
 #. Set the name to "groupname" and the display name to "Group name"
@@ -218,32 +236,40 @@ COmanage Registry groups
 
 Advantages:
 
-- Uses the same UI as the onboarding and identity management process
-- Possible (albeit complex) to automatically generate GIDs using ``voPosixGroup`` (see :ref:`voposixgroup`)
+.. rst-class:: compact
+
+#. Uses the same UI as the onboarding and identity management process
+#. Possible (albeit complex) to automatically generate GIDs using ``voPosixGroup`` (see :ref:`voPosixGroup <voposixgroup>`)
 
 Disadvantages:
 
-- No support for nested groups
-- Groups cannot own other groups
-- No support for set math between groups
-- No generic metadata support, so group quotas would need to be maintained separately (presumably by a Rubin-developed service)
-- There currently is a rendering bug that causes each person to show up three times when editing the group membership, but this will be fixed in the 4.0.0 release due in the second quarter of 2021
+.. rst-class:: compact
+
+#. No support for nested groups
+#. Groups cannot own other groups
+#. No support for set math between groups
+#. No generic metadata support, so group quotas would need to be maintained separately (presumably by a Rubin-developed service)
+#. There currently is a rendering bug that causes each person to show up three times when editing the group membership, but this will be fixed in the 4.0.0 release due in the second quarter of 2021
 
 Grouper
 ^^^^^^^
 
 Advantages:
 
-- Full support for nested groups
-- Groups can own other groups
-- Specializes in set math between groups if we want to do complex authorization calculations
-- Arbitrary metadata can be added to groups via the API, so we could use Grouper as our data store rather than a local database
+.. rst-class:: compact
+
+#. Full support for nested groups
+#. Groups can own other groups
+#. Specializes in set math between groups if we want to do complex authorization calculations
+#. Arbitrary metadata can be added to groups via the API, so we could use Grouper as our data store rather than a local database
 
 Disadvantages:
 
-- More complex setup and data flow
-- Users have to interact with two UIs, the COmanage one for identities and the Grouper UI for group management
-- No support for automatic GID generation
+.. rst-class:: compact
+
+#. More complex setup and data flow
+#. Users have to interact with two UIs, the COmanage one for identities and the Grouper UI for group management
+#. No support for automatic GID generation
 
 .. _gid:
 
@@ -282,10 +308,10 @@ Cluster functionality is implemented by Cluster Plugins.
 Right now there is one Cluster Plugin that comes out of the box with COmanage, the `UnixCluster plugin <https://spaces.at.internet2.edu/display/COmanage/Unix+Cluster+Plugin>`__.
 
 The UnixCluster plugin is configured with a "GID Type."
-From the documentation we read "When a CO Group is mapped to a Unix Cluster Group, the CO Group Identifier of this type will be used as the group's numeric ID."
+From the documentation: "When a CO Group is mapped to a Unix Cluster Group, the CO Group Identifier of this type will be used as the group's numeric ID."
 CO Person can then have a UnixCluster account that has associated with it a UnixCluster Group, and the group will have a GID identifier.
 
-To have the information about the UnixCluster and the UnixCluster Group provisioned into LDAP using the ``voPosixAccount`` objectClass, you need to define a `CO Service <https://spaces.at.internet2.edu/display/COmanage/Registry+Services>`__ for the UnixCluster.
+To have the information about the UnixCluster and the UnixCluster Group provisioned into LDAP using the ``voPosixAccount`` objectClass, define a `CO Service <https://spaces.at.internet2.edu/display/COmanage/Registry+Services>`__ for the UnixCluster.
 In that configuration you need to specify a "short label", which will become value for an LDAP attribute option.
 Since the ``voPosixAccount`` objectClass attributes are multi-valued, you can represent multiple "clusters," and they are distinguised by using that LDAP attribute option value.
 For example::
@@ -311,11 +337,11 @@ For example::
     voPosixAccountHomeDirectory;scope-primary: /home/scott.koranda
 
 This reflects a CO Service for the UnixAccount using the short label "primary."
-With a second UnixCluster and CO Service with short label "slac" to represent an account at SLAC, then I would have additionally::
+With a second UnixCluster and CO Service with short label "slac" to represent an account at SLAC, this record would have additionally::
 
     voPosixAccountGidNumber;scope-slac: 1000001
 
-UnixCluster object and UnixCluster Group objects and all the identifiers are usually established during an enrollment flow.
+The UnixCluster object and UnixCluster Group objects and all the identifiers are usually established during an enrollment flow.
 
 Grouper
 ^^^^^^^
