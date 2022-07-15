@@ -7,8 +7,18 @@ Abstract
 
 Rubin Observatory plans to use COmanage as the identity management platform for the Rubin Science Platform.
 Group membership will be maintained inside COmanage.
-UID and GID assignment will be done outside of COmanage by Gafaelfawr, the authentication and authorization component of the Rubin Science Platform.
-This document provides a step-by-step how to configure COmanage for that purpose, discusses alternate configuration approaches that were discarded, discusses integration requirements, and summarizes remaining COmanage work.
+UID and GID assignment will be done outside of COmanage by Gafaelfawr_, the authentication and authorization component of the Rubin Science Platform.
+This tech note provides a step-by-step how to configure COmanage for that purpose, discusses alternate configuration approaches that were discarded, discusses integration requirements, and summarizes remaining COmanage work.
+
+.. note::
+
+   This is part of a tech note series on identity management for the Rubin Science Platform.
+   The primary documents are DMTN-234_, which describes the high-level design; DMTN-224_, which describes the implementation; and SQR-069_, which provides a history and analysis of the decisions underlying the design and implementation.
+   See the `references section of DMTN-224 <https://dmtn-224.lsst.io/#references>`__ for a complete list of related documents.
+
+.. _DMTN-234: https://dmtn-234.lsst.io/
+.. _DMTN-224: https://dmtn-224.lsst.io/
+.. _SQR-069: https://sqr-069.lsst.io/
 
 Decisions
 =========
