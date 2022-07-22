@@ -34,7 +34,9 @@ authors:
 # doi: 10.5281/zenodo.#####
 
 # Copyright statement
-copyright: "2021, Association of Universities for Research in Astronomy, Inc. (AURA)"
+copyright: >-
+  2021-2022, Association of Universities for Research in Astronomy,
+  Inc. (AURA)
 
 # Description. A short, 1-2 sentence statemement used by document indices.
 description: >
@@ -43,14 +45,12 @@ description: >
 
 # Abstract, if available
 abstract: >
- Rubin Observatory plans to use COmanage as the identity management platform
- for the Rubin Science Platform.  Group membership will be maintained inside
- COmanage.  UID and GID assignment will be done outside of COmanage by
- Gafaelfawr, the authentication and authorization component of the Rubin
- Science Platform.  This tech note provides a step-by-step how to configure
- COmanage for that purpose, discusses alternate configuration approaches that
- were discarded, discusses integration requirements, and summarizes remaining
- COmanage work.
+  COmanage is a user management system designed for academic and research
+  collaborations.  Rubin Observatory will use COmanage (as provided by
+  CILogon) as the user identity store and group management system for the
+  Rubin Science Platform.  This tech note provides the specific details of the
+  COmanage configuration used by the Science Platform and summarizes remaining
+  COmanage work.
 
 # URL where this document is published by Read the Docs. e.g. http://sqr-001.lsst.codes
 url: "https://sqr-055.lsst.io"
