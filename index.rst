@@ -112,8 +112,8 @@ This is used by Gafaelfawr_ to get the username after authentication or, if that
 
 .. _enrollment-flow:
 
-Add username to enrollment flow
--------------------------------
+Configure enrollment flow
+-------------------------
 
 Note that we use the preferred email and full name, not the official one.
 This must match the settings used during :ref:`LDAP provisioning <ldap-provisioning>`.
@@ -121,6 +121,7 @@ This must match the settings used during :ref:`LDAP provisioning <ldap-provision
 .. rst-class:: compact
 
 #. Edit "Self Signup With Approval" enrollment flow
+#. Change "Email Confirmation Mode" to ``review`` and save
 #. Edit its enrollment attributes
 #. Edit the Name attribute, change its attribute definition to Preferred rather than Official, and make sure that only Given Name is required
 #. Edit the Email attribute and change its attribute definition to Preferred rather than Official
@@ -129,7 +130,12 @@ This must match the settings used during :ref:`LDAP provisioning <ldap-provision
    Set the type of the field to CO Person, Identifier, UID.
    Mark as required.
 
-This does not work for the "Invite a collaborator" enrollment flow, since the person creating the invite is prompted for the username (this is CO-1002_).
+The email confirmation mode setting adds a confirmation screen when confirming an email address.
+If this is not done, just visiting the URL sent in an email address will automatically confirm the email address.
+This interacts poorly with email anti-virus systems that retrieve all URLs in incoming messages and thus would automatically confirm email addresses.
+Since anti-virus systems don't interact with the retrieved page, requiring the user click a button addresses this problem.
+
+The above approach for selecting usernames does not work for the "Invite a collaborator" enrollment flow, since the person creating the invite is prompted for the username (this is CO-1002_).
 We probably won't need that flow.
 If we do, we'll need a separate enrollment flow plugin (which does not exist as a turnkey configuration, but there are examples to work from) to collect the username after email validation.
 
@@ -245,8 +251,6 @@ This uses the CILogon test LDAP server (a production configuration will probably
 
 Open COmanage work
 ==================
-
-- Add a button or require authentication before confirming the email address to avoid a bug in the onboarding flow.
 
 - Write a CakePHP plugin to enforce a group naming convention.
 
