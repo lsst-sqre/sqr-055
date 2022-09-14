@@ -164,36 +164,15 @@ This implements the restrictions on valid usernames documented in `DMTN-225`_.
 Group name validation
 ---------------------
 
-One approach is to use the `Group Name Filter Plugin`_.
-Ensure it is also enabled.
-Then:
+Unlike with usernames, COmanage does not provide out-of-the-box support for validating group names with a regular expression.
+We therefore use a custom plugin to enforce the group naming constraints defined in DMTN-225_.
 
-.. rst-class:: compact
+The plugin used is `GroupNameValidator <https://github.com/cilogon/GroupNameValidator>`__ with the following configuration:
 
-#. Go to Configuration → Extended Types and add a new type
-#. Set the name to "groupname" and the display name to "Group name"
-#. Go to Configuration → Data Filters and add a new filter
-#. Set the name to "Force group name validation" and the plugin to GroupNameFilter and click Add
-#. Set the identifier type to "Group name"
-#. Go to Configuration → Identifier Validators and add a new validator
-#. Set the name to "Username validation", the plugin to RegexIdentifierValidator, and the attribute to UID, and click Add
-#. Set the regular expression to::
+.. code-block:: php
 
-       /^g_[a-z0-9._-]{1,30}$/
-
-This essentially replaces the group name with an identifier and requires that identifier to start with ``g_``, which will avoid conflicts between usernames and groups.
-`DMTN-225`_ defines the constraints on group names.
-
-.. _Group Name Filter Plugin: https://spaces.at.internet2.edu/display/COmanage/Group+Name+Filter+Plugin
-
-However, this doesn't change the group creation flow.
-One has to explicitly go into the group and add the new Group name identifier.
-
-A better approach would be a CakePHP plugin that intercepts the save call and can enforce a group naming convention.
-This would use the `CakePHP Event System`_.
-This plugin does not already exist, but the CILogon folks have a previously-written plugin that is very similar and could adapt it to our needs.
-
-.. _CakePHP Event System: https://book.cakephp.org/2/en/core-libraries/events.html
+   Configure::write('GroupNameValidator.pattern', '/^g_[a-z0-9._-]{1,30}$/');
+   Configure::write('GroupNameValidator.flash_error_text', 'Name must start with g_ and use only a-z,0-9,.,_, and -');
 
 API
 ===
@@ -208,6 +187,9 @@ To make LDAP queries, use commands like:
    $ ldapsearch -LLL -H ldaps://ldap-test.cilogon.org \
                 -D 'uid=readonly_user,ou=system,o=LSST,o=CO,dc=lsst,dc=org' \
                 -x -w PASSWORD -b 'ou=people,o=LSST,o=CO,dc=lsst,dc=org'
+
+For IDF dev, the DNs end in ``dc=lsst_dev,dc=org``.
+For IDF int, the DNs end in ``dc=lsst,dc=org`` as shown above.
 
 The password is in 1Password under the hostname of the COmanage registry.
 Use ``ou=people,o=LSST,o=CO,dc=lsst,dc=org`` for people and ``ou=groups,o=LSST,o=CO,dc=lsst,dc=org`` for groups.
@@ -240,19 +222,28 @@ This is suitable for the ``values-*.yaml`` file in Phalanx_.
 
    ldap:
      url: "ldaps://ldap-test.cilogon.org"
-     userDn: "uid=readonly_user,ou=system,o=LSST,o=CO,dc=lsst,dc=org"
-     groupBaseDn: "ou=groups,o=LSST,o=CO,dc=lsst,dc=org"
+     userDn: "uid=readonly_user,ou=system,o=LSST,o=CO,dc=lsst_dev,dc=org"
+     groupBaseDn: "ou=groups,o=LSST,o=CO,dc=lsst_dev,dc=org"
      groupObjectClass: "eduMember"
      groupMemberAttr: "hasMember"
-     userBaseDn: "ou=people,o=LSST,o=CO,dc=lsst,dc=org"
+     userBaseDn: "ou=people,o=LSST,o=CO,dc=lsst_dev,dc=org"
      userSearchAttr: "voPersonApplicationUID"
+     addUserGroup: true
 
 This uses the CILogon test LDAP server (a production configuration will probably use a different LDAP server) and links to an enrollment flow in a test version of COmanage.
 
 Open COmanage work
 ==================
 
-- Write a CakePHP plugin to enforce a group naming convention.
+- If the user selects a username during enrollment that has already been taken by another user, they are left stranded at an error screen with no obvious way to proceed.
+  They can use the back button in the browser to go back to the enrollment form and choose a different username, but it's not obvious that this is possible and inline validation would be better.
+  The proposed solution is to gather the username using an enrollment flow plugin with its own screen and validation.
+  This plugin already exists and just needs to be deployed and configured.
 
 - COmanage comes with a bunch of default components that we don't want to use (announcement feeds, forums, etc.).
-  Edit the default dashboard to remove those widges and replace them with widges for group management and personal identity management (if there are any applicable ones).
+  Edit the default dashboard to remove those widgets and replace them with widges for group management and personal identity management (if there are any applicable ones).
+
+- Not directly COmanage, but we would like to customize the CILogon UI.
+  This is done by writing CSS intended to be layered on top of the `base CSS <https://cilogon.org/include/cilogon.css>`__ and providing it to the CILogon team so that they can store it in the database.
+  It is then selected via a parameter to the login URL, which Gafaelfawr already supports.
+  The current LSST CSS is attached to `DM-35698 <https://jira.lsstcorp.org/browse/DM-35698>`__ in Jira.
