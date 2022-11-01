@@ -25,6 +25,21 @@ This tech note provides the specific details of the COmanage configuration used 
 Configuration
 =============
 
+CILogon
+-------
+
+(Not strictly part of COmanage, but closely related.)
+
+We use custom CSS for CILogon, which we then specify by passing ``skin=LSST`` in the parameters to the CILogon login page.
+This has to be manually loaded by the CILogon folks.
+
+The CSS we use is maintained in the `lsst-sqre/cilogon-theme GitHub project <https://github.com/lsst-sqre/cilogon-theme>`__.
+``src/rubin.css`` is the file that we provide to CILogon.
+
+This setup only has to be done once for all environments, not per-environment like the other COmanage configuration, and only needs to be redone if the CSS file changes.
+
+See `DM-35698 <https://jira.lsstcorp.org/browse/DM-35698>`__ for the process the last time we updated the CSS.
+
 Configure unique attribute for each person
 ------------------------------------------
 
@@ -125,21 +140,26 @@ This must match the settings used during :ref:`LDAP provisioning <ldap-provision
 #. Edit its enrollment attributes
 #. Edit the Name attribute, change its attribute definition to Preferred rather than Official, and make sure that only Given Name is required
 #. Edit the Email attribute and change its attribute definition to Preferred rather than Official
-#. Add username with a suitable description.
-   Allow the user to change it during enrollment.
-   Set the type of the field to CO Person, Identifier, UID.
-   Mark as required.
 
 The email confirmation mode setting adds a confirmation screen when confirming an email address.
 If this is not done, just visiting the URL sent in an email address will automatically confirm the email address.
 This interacts poorly with email anti-virus systems that retrieve all URLs in incoming messages and thus would automatically confirm email addresses.
 Since anti-virus systems don't interact with the retrieved page, requiring the user click a button addresses this problem.
 
-The above approach for selecting usernames does not work for the "Invite a collaborator" enrollment flow, since the person creating the invite is prompted for the username (this is CO-1002_).
-We probably won't need that flow.
-If we do, we'll need a separate enrollment flow plugin (which does not exist as a turnkey configuration, but there are examples to work from) to collect the username after email validation.
+In addition, we install the `IdentifierEnroller Plugin <https://spaces.at.internet2.edu/display/COmanage/IdentifierEnroller+Plugin>`__ and use it to capture the requested username after email verification.
+This plugin has better error handling than adding username to the list of enrollment attributes, particularly if that username is already in use.
+It is attached as an enrollment flow wedge to the "Self Signup With Approval" enrollment flow.
 
-.. _CO-1002: https://todos.internet2.edu/browse/CO-1002
+To configure this plugin:
+
+.. rst-class:: compact
+
+#. Attach the IdentifierEnroller as a wedge
+#. Select Configure
+#. Select "Manage Indentifier Enroller Identifiers"
+#. Set the label to ``Username``
+#. Set the description to something appropriate
+#. Set the identifier type to ``UID``
 
 Username validation
 -------------------
@@ -235,15 +255,8 @@ This uses the CILogon test LDAP server (a production configuration will probably
 Open COmanage work
 ==================
 
-- If the user selects a username during enrollment that has already been taken by another user, they are left stranded at an error screen with no obvious way to proceed.
-  They can use the back button in the browser to go back to the enrollment form and choose a different username, but it's not obvious that this is possible and inline validation would be better.
-  The proposed solution is to gather the username using an enrollment flow plugin with its own screen and validation.
-  This plugin already exists and just needs to be deployed and configured.
+- The landing pages before and after verifying the user's email address need further customization.
+  The current versions are in the `cilogin/lsst-registry-landing GitHub repository <https://github.com/cilogon/lsst-registry-landing>`__.
 
 - COmanage comes with a bunch of default components that we don't want to use (announcement feeds, forums, etc.).
   Edit the default dashboard to remove those widgets and replace them with widges for group management and personal identity management (if there are any applicable ones).
-
-- Not directly COmanage, but we would like to customize the CILogon UI.
-  This is done by writing CSS intended to be layered on top of the `base CSS <https://cilogon.org/include/cilogon.css>`__ and providing it to the CILogon team so that they can store it in the database.
-  It is then selected via a parameter to the login URL, which Gafaelfawr already supports.
-  The current LSST CSS is attached to `DM-35698 <https://jira.lsstcorp.org/browse/DM-35698>`__ in Jira.
