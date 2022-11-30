@@ -32,6 +32,10 @@ They can make any changes to any collaboration.
 Regular administrators are members of the ``CO:admins`` group of the LSST collaboration, but are not members of the COmanage collaboration (and thus will not see it in the UI).
 They can approve petitions (COmanage's term for approving new users), change user attributes, and manage any groups in the LSST collaboration, but don't have special powers outside of that collaboration.
 
+It's possible to grant access to approve petitions to a different group by changing the enrollment flow configuration.
+That plus making the people handling approval owners of any groups they may need to update would allow us to remove ``CO:admins`` permissions in favor of more limited access.
+Currently, we haven't bothered with this.
+
 .. warning::
 
    **Always use incognito or private browsing when juggling multiple identities in COmanage.**
