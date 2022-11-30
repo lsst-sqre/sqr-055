@@ -111,13 +111,13 @@ We use ``LSST Registry ID`` as that attribute.
 
 .. rst-class:: compact
 
-#. Go to Configuration → Extended Types
+#. Go to :menuselection:`Configuration --> Extended Types`
 #. Add an extended type:
 
    - Name: ``lsstregistryid``
    - Display Name: ``LSST Registry ID``
 
-#. Go to Configuration → Identifier Assignments
+#. Go to :menuselection:`Configuration --> Identifier Assignments`
 #. Create an identifier assignment:
 
    - Description: ``LSST Registry ID``
@@ -145,7 +145,7 @@ This must match the settings used during :ref:`enrollment flow <enrollment-flow>
 
 .. rst-class:: compact
 
-#. Go to Configuration → Provisioning Targets and configure Primary LDAP
+#. Go to :menuselection:`Configuration --> Provisioning Targets` and configure Primary LDAP
 #. Set "People DN Identifier Type" to ``LSST Registry ID``
 #. Set "People DN Attribute Name" to ``voPersonId``
 #. Go down to the attribute configuration
@@ -171,7 +171,7 @@ This is used by Gafaelfawr_ to get the username after authentication or, if that
 
 .. rst-class:: compact
 
-#. Go to Configuration → OIDC Clients
+#. Go to :menuselection:`Configuration --> OIDC Clients`
 #. Add a new client
 #. Set the name to a reasonable short description of the deployment
 #. Set the home URL to the top-level URL of the deployment
@@ -198,6 +198,7 @@ This must match the settings used during :ref:`LDAP provisioning <ldap-provision
 #. Edit the Name attribute, change its attribute definition to Preferred rather than Official, and make sure that only Given Name is required
 #. Edit the Email attribute and change its attribute definition to Preferred rather than Official
 #. Add a new enrollment attribute:
+
    - Label: ``Users group``
    - Attribute class: ``CO Person``
    - Attribute name: ``Group member``
@@ -235,7 +236,7 @@ Ensure the `Regex Identifier Validator Plugin`_ is enabled.  Then:
 
 .. rst-class:: compact
 
-#. Go to Configuration → Identifier Validators and add a new validator
+#. Go to :menuselection:`Configuration --> Identifier Validators` and add a new validator
 #. Set the name to "Username validation", the plugin to RegexIdentifierValidator, and the attribute to UID, and click Add
 #. Set the regular expression to::
 
@@ -267,6 +268,7 @@ Add a link to the corresponding Science Platform instance to the top bar of the 
 
 #. Go to :menuselection:`Configuration --> CO Navigation Links`
 #. Select :guilabel:`Add CO Navigation Link`
+
    - Description: ``Link to corresponding Science Platform instance``
    - Link title: ``Science Platform (INT)`` (changing or removing the part in parentheses)
    - Link URL: URL of the Science Platform instance
