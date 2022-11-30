@@ -272,6 +272,7 @@ Add a link to the corresponding Science Platform instance to the top bar of the 
    - Link URL: URL of the Science Platform instance
 
 Other helpful links (such as to documentation for how to use COmanage once we have it) can be added similarly.
+See `Configuring Navigation Links <https://spaces.at.internet2.edu/display/COmanage/Configuring+Navigation+Links>`__ for more details.
 
 API
 ===
