@@ -332,5 +332,9 @@ Open COmanage work
 - The landing pages before and after verifying the user's email address need further customization.
   The current versions are in the `cilogin/lsst-registry-landing GitHub repository <https://github.com/cilogon/lsst-registry-landing>`__.
 
+- COmanage can be themed following the instructions at `Theming COmanage Registry <https://spaces.at.internet2.edu/display/COmanage/Theming+COmanage+Registry>`__.
+  We haven't yet looked in detail at this, let alone started.
+  Any required custom CSS, JavaScript, or images will need to be uploaded to the server by the CILogon administrators before we can use it.
+
 - COmanage comes with a bunch of default components that we don't want to use (announcement feeds, forums, etc.).
   Edit the default dashboard to remove those widgets and replace them with widges for group management and personal identity management (if there are any applicable ones).
