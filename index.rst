@@ -1,7 +1,5 @@
 :tocdepth: 1
 
-.. sectnum::
-
 Abstract
 ========
 
@@ -15,7 +13,7 @@ This tech note provides the specific details of the COmanage configuration used 
 .. note::
 
    This is part of a tech note series on identity management for the Rubin Science Platform.
-   The primary documents are DMTN-234_, which describes the high-level design; DMTN-224_, which describes the implementation; and SQR-069_, which provides a history and analysis of the decisions underlying the design and implementation.
+   The primary documents are :dmtn:`234`, which describes the high-level design; :dmtn:`224`, which describes the implementation; and :sqr:`069`, which provides a history and analysis of the decisions underlying the design and implementation.
    See the `references section of DMTN-224 <https://dmtn-224.lsst.io/#references>`__ for a complete list of related documents.
 
 .. _DMTN-234: https://dmtn-234.lsst.io/
@@ -38,7 +36,7 @@ The CSS we use is maintained in the `lsst-sqre/cilogon-theme GitHub project <htt
 
 This setup only has to be done once for all environments, not per-environment like the other COmanage configuration, and only needs to be redone if the CSS file changes.
 
-See `DM-35698 <https://jira.lsstcorp.org/browse/DM-35698>`__ for the process the last time we updated the CSS.
+See `DM-35698 <https://jira.lsstcorp.org/browse/DM-35698>`__ for the process we followed when updating the CSS.
 
 Configure unique attribute for each person
 ------------------------------------------
@@ -174,10 +172,9 @@ Ensure the `Regex Identifier Validator Plugin`_ is enabled.  Then:
 
        /^[a-z0-9](?:[a-z0-9]|-[a-z0-9])*[a-z](?:[a-z0-9]|-[a-z0-9])*$/
 
-This implements the restrictions on valid usernames documented in `DMTN-225`_.
+This implements the restrictions on valid usernames documented in :dmtn:`225`.
 
 .. _Regex Identifier Validator Plugin: https://spaces.at.internet2.edu/display/COmanage/Regex+Identifier+Validator+Plugin
-.. _DMTN-225: https://dmtn-225.lsst.io/
 
 .. _group-name-validation:
 
@@ -185,7 +182,7 @@ Group name validation
 ---------------------
 
 Unlike with usernames, COmanage does not provide out-of-the-box support for validating group names with a regular expression.
-We therefore use a custom plugin to enforce the group naming constraints defined in DMTN-225_.
+We therefore use a custom plugin to enforce the group naming constraints defined in :dmtn:`225`.
 
 The plugin used is `GroupNameValidator <https://github.com/cilogon/GroupNameValidator>`__ with the following configuration:
 
