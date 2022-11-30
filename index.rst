@@ -1,7 +1,5 @@
 :tocdepth: 1
 
-.. sectnum::
-
 Abstract
 ========
 
@@ -15,12 +13,66 @@ This tech note provides the specific details of the COmanage configuration used 
 .. note::
 
    This is part of a tech note series on identity management for the Rubin Science Platform.
-   The primary documents are DMTN-234_, which describes the high-level design; DMTN-224_, which describes the implementation; and SQR-069_, which provides a history and analysis of the decisions underlying the design and implementation.
+   The primary documents are :dmtn:`234`, which describes the high-level design; :dmtn:`224`, which describes the implementation; and :sqr:`069`, which provides a history and analysis of the decisions underlying the design and implementation.
    See the `references section of DMTN-224 <https://dmtn-224.lsst.io/#references>`__ for a complete list of related documents.
 
-.. _DMTN-234: https://dmtn-234.lsst.io/
-.. _DMTN-224: https://dmtn-224.lsst.io/
-.. _SQR-069: https://sqr-069.lsst.io/
+Administrators
+==============
+
+We use separate installations of COmanage for the three :abbr:`IDF (Interim Data Facility)` environments so that we can test configuration changes and integrations without breaking other environments.
+
+Each installation has at least two collaborations: the COmanage internal collaboration, and the LSST collaboration.
+The latter is where all the users are configured.
+It may have additional collaborations in the future to support delegated group management for specific science collaborations or other subgroups of users.
+
+There are, correspondingly, two types of administrators for the COmanage instance.
+Platform Administrators are users who are members of the COmanage internal collaboration and the ``CO:admins`` group of that collaboration.
+They can make any changes to any collaboration.
+
+Regular administrators are members of the ``CO:admins`` group of the LSST collaboration, but are not members of the COmanage collaboration (and thus will not see it in the UI).
+They can approve petitions (COmanage's term for approving new users), change user attributes, and manage any groups in the LSST collaboration, but don't have special powers outside of that collaboration.
+
+It's possible to grant access to approve petitions to a different group by changing the enrollment flow configuration.
+That plus making the people handling approval owners of any groups they may need to update would allow us to remove ``CO:admins`` permissions in favor of more limited access.
+Currently, we haven't bothered with this.
+
+.. warning::
+
+   **Always use incognito or private browsing when juggling multiple identities in COmanage.**
+
+   Administering COmanage often requires using multiple identities.
+   For example, one may be a Platform Administrator under one identity and be approving and setting group membership for a separate identity for yourself that will be a regular administrator.
+
+   It is very easy to get your COmanage record into an awkward or broken state if those identities aren't kept separate.
+   Therefore, whenever manipulating Platform Administrators or onboarding yourself under a second identity as a distinct person (as opposed to adding a new identity to an existing record), always use separate incognito windows for each identity.
+
+Platform administrators
+-----------------------
+
+COmanage strongly recommends using a separate identity for a Platform Administrator that is not a member of any other collaboration (and indeed, in the version of COmanage as of 2022-11-29, if a Platform Administrator is onboarded into the LSST collaboration, they lose their Platform Administrator powers).
+We therefore use the Google ``*-admin`` accounts in the lsst.cloud Google Cloud Identity domain as the identities for Platform Administrators.
+(See :rtn:`020` for more details about that domain and those accounts.)
+
+Only a few people need to be Platform Administrators.
+That access only needs to be used to make some configuration changes and to fix problems if other administrators are locked out.
+
+Adding new Platform Administrators needs to be done manually, since there is no regular enrollment flow defined for the special COmanage collaboration.
+Follow the `Default Registry Enrollment <https://spaces.at.internet2.edu/display/COmanage/Default+Registry+Enrollment>`__ instructions.
+To get the login identifier used in step one, have the person being onboarded go to `CILogon <https://cilogon.org/>`__ in a fresh icognito window and log on with their ``*-admin`` account.
+On the resulting screen, expand user attributes, and use the "CILogon User Identifier" string (which will look like a URL).
+When adding this as an identifier to the Organizational Identity, use the "OIDC sub" identity type.
+
+Once the user's person record has been created using that process, go to the COmanage collaboration, choose :guilabel:`Groups` from the sidebar, choose :guilabel:`All Groups`, and add them as a member and owner of the ``CO:admins`` group.
+
+As mentioned above, make sure not to attempt to onboard this same identity into the LSST collaboration or add it as an additional entity to any person record in that collaboration, since this will currently cause it to lose Platform Administrator permissions.
+
+Regular administrators
+----------------------
+
+Regular administrators can be onboarded in the normal way, using the "Self Signup With Approval" flow like any other user.
+Once their petition has been approved and their user record has been created, go to the LSST collaboration, choose :guilabel:`Groups` from the sidebar, choose :guilabel:`All Groups`, and add them as a member and owner of the ``CO:admins`` group.
+
+This is the appropriate permissions for users who will be approving the petitions of other users and sorting users into the appropriate groups.
 
 Configuration
 =============
@@ -37,8 +89,13 @@ The CSS we use is maintained in the `lsst-sqre/cilogon-theme GitHub project <htt
 ``src/rubin.css`` is the file that we provide to CILogon.
 
 This setup only has to be done once for all environments, not per-environment like the other COmanage configuration, and only needs to be redone if the CSS file changes.
+See `DM-35698 <https://jira.lsstcorp.org/browse/DM-35698>`__ for the process we followed when updating the CSS.
 
-See `DM-35698 <https://jira.lsstcorp.org/browse/DM-35698>`__ for the process the last time we updated the CSS.
+One of the things this skin does is hide the "Remember me" checkbox from the login page.
+This normally allows users to tell CILogon to remember which identity provider they use, so they never see the page to select an identity provider again.
+Unfortunately, we've found this causes confusion in practice, since users end up wanting to select a different identity provider and can't, without going to an obscure-to-users CILogon page to remove that cookie.
+We therefore disable that button with CSS so that the user always sees the identity provider selection page.
+Their last selection is still remembered and selected by default.
 
 Configure unique attribute for each person
 ------------------------------------------
@@ -140,11 +197,21 @@ This must match the settings used during :ref:`LDAP provisioning <ldap-provision
 #. Edit its enrollment attributes
 #. Edit the Name attribute, change its attribute definition to Preferred rather than Official, and make sure that only Given Name is required
 #. Edit the Email attribute and change its attribute definition to Preferred rather than Official
+#. Add a new enrollment attribute:
+   - Label: ``Users group``
+   - Attribute class: ``CO Person``
+   - Attribute name: ``Group member``
+   - Required: ``Required``
+   - Default value: ``g_users`` (or whatever the name of the general users group is)
+   - Modifiable: unchecked
+   - Hidden: checked
 
 The email confirmation mode setting adds a confirmation screen when confirming an email address.
 If this is not done, just visiting the URL sent in an email address will automatically confirm the email address.
 This interacts poorly with email anti-virus systems that retrieve all URLs in incoming messages and thus would automatically confirm email addresses.
 Since anti-virus systems don't interact with the retrieved page, requiring the user click a button addresses this problem.
+
+The additional enrollment attribute automatically adds new users to the general users group, avoiding an additional step for the person approving new users unless that user needs to be a member of a special group.
 
 In addition, we install the `IdentifierEnroller Plugin <https://spaces.at.internet2.edu/display/COmanage/IdentifierEnroller+Plugin>`__ and use it to capture the requested username after email verification.
 This plugin has better error handling than adding username to the list of enrollment attributes, particularly if that username is already in use.
@@ -174,10 +241,9 @@ Ensure the `Regex Identifier Validator Plugin`_ is enabled.  Then:
 
        /^[a-z0-9](?:[a-z0-9]|-[a-z0-9])*[a-z](?:[a-z0-9]|-[a-z0-9])*$/
 
-This implements the restrictions on valid usernames documented in `DMTN-225`_.
+This implements the restrictions on valid usernames documented in :dmtn:`225`.
 
 .. _Regex Identifier Validator Plugin: https://spaces.at.internet2.edu/display/COmanage/Regex+Identifier+Validator+Plugin
-.. _DMTN-225: https://dmtn-225.lsst.io/
 
 .. _group-name-validation:
 
@@ -185,7 +251,7 @@ Group name validation
 ---------------------
 
 Unlike with usernames, COmanage does not provide out-of-the-box support for validating group names with a regular expression.
-We therefore use a custom plugin to enforce the group naming constraints defined in DMTN-225_.
+We therefore use a custom plugin to enforce the group naming constraints defined in :dmtn:`225`.
 
 The plugin used is `GroupNameValidator <https://github.com/cilogon/GroupNameValidator>`__ with the following configuration:
 
@@ -193,6 +259,20 @@ The plugin used is `GroupNameValidator <https://github.com/cilogon/GroupNameVali
 
    Configure::write('GroupNameValidator.pattern', '/^g_[a-z0-9._-]{1,30}$/');
    Configure::write('GroupNameValidator.flash_error_text', 'Name must start with g_ and use only a-z,0-9,.,_, and -');
+
+Navigation links
+----------------
+
+Add a link to the corresponding Science Platform instance to the top bar of the COmanage interface:
+
+#. Go to :menuselection:`Configuration --> CO Navigation Links`
+#. Select :guilabel:`Add CO Navigation Link`
+   - Description: ``Link to corresponding Science Platform instance``
+   - Link title: ``Science Platform (INT)`` (changing or removing the part in parentheses)
+   - Link URL: URL of the Science Platform instance
+
+Other helpful links (such as to documentation for how to use COmanage once we have it) can be added similarly.
+See `Configuring Navigation Links <https://spaces.at.internet2.edu/display/COmanage/Configuring+Navigation+Links>`__ for more details.
 
 API
 ===
@@ -257,6 +337,10 @@ Open COmanage work
 
 - The landing pages before and after verifying the user's email address need further customization.
   The current versions are in the `cilogin/lsst-registry-landing GitHub repository <https://github.com/cilogon/lsst-registry-landing>`__.
+
+- COmanage can be themed following the instructions at `Theming COmanage Registry <https://spaces.at.internet2.edu/display/COmanage/Theming+COmanage+Registry>`__.
+  We haven't yet looked in detail at this, let alone started.
+  Any required custom CSS, JavaScript, or images will need to be uploaded to the server by the CILogon administrators before we can use it.
 
 - COmanage comes with a bunch of default components that we don't want to use (announcement feeds, forums, etc.).
   Edit the default dashboard to remove those widgets and replace them with widges for group management and personal identity management (if there are any applicable ones).
