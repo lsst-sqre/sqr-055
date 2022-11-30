@@ -16,9 +16,57 @@ This tech note provides the specific details of the COmanage configuration used 
    The primary documents are :dmtn:`234`, which describes the high-level design; :dmtn:`224`, which describes the implementation; and :sqr:`069`, which provides a history and analysis of the decisions underlying the design and implementation.
    See the `references section of DMTN-224 <https://dmtn-224.lsst.io/#references>`__ for a complete list of related documents.
 
-.. _DMTN-234: https://dmtn-234.lsst.io/
-.. _DMTN-224: https://dmtn-224.lsst.io/
-.. _SQR-069: https://sqr-069.lsst.io/
+Administrators
+==============
+
+We use separate installations of COmanage for the three :abbr:`IDF (Interim Data Facility)` environments so that we can test configuration changes and integrations without breaking other environments.
+
+Each installation has at least two collaborations: the COmanage internal collaboration, and the LSST collaboration.
+The latter is where all the users are configured.
+It may have additional collaborations in the future to support delegated group management for specific science collaborations or other subgroups of users.
+
+There are, correspondingly, two types of administrators for the COmanage instance.
+Platform Administrators are users who are members of the COmanage internal collaboration and the ``CO:admins`` group of that collaboration.
+They can make any changes to any collaboration.
+
+Regular administrators are members of the ``CO:admins`` group of the LSST collaboration, but are not members of the COmanage collaboration (and thus will not see it in the UI).
+They can approve petitions (COmanage's term for approving new users), change user attributes, and manage any groups in the LSST collaboration, but don't have special powers outside of that collaboration.
+
+.. warning::
+
+   **Always use incognito or private browsing when juggling multiple identities in COmanage.**
+
+   Administering COmanage often requires using multiple identities.
+   For example, one may be a Platform Administrator under one identity and be approving and setting group membership for a separate identity for yourself that will be a regular administrator.
+
+   It is very easy to get your COmanage record into an awkward or broken state if those identities aren't kept separate.
+   Therefore, whenever manipulating Platform Administrators or onboarding yourself under a second identity as a distinct person (as opposed to adding a new identity to an existing record), always use separate incognito windows for each identity.
+
+Platform administrators
+-----------------------
+
+COmanage strongly recommends using a separate identity for a Platform Administrator that is not a member of any other collaboration (and indeed, in the version of COmanage as of 2022-11-29, if a Platform Administrator is onboarded into the LSST collaboration, they lose their Platform Administrator powers).
+We therefore use the Google ``*-admin`` accounts in the lsst.cloud Google Cloud Identity domain as the identities for Platform Administrators.
+(See :rtn:`020` for more details about that domain and those accounts.)
+
+Only a few people need to be Platform Administrators.
+That access only needs to be used to make some configuration changes and to fix problems if other administrators are locked out.
+
+Adding new Platform Administrators needs to be done manually, since there is no regular enrollment flow defined for the special COmanage collaboration.
+Follow the `Default Registry Enrollment <https://spaces.at.internet2.edu/display/COmanage/Default+Registry+Enrollment>`__ instructions.
+To get the login identifier used in step one, have the person being onboarded go to `CILogon <https://cilogon.org/>`__ in a fresh icognito window and log on with their ``*-admin`` account.
+On the resulting screen, expand user attributes, and use the "CILogon User Identifier" string (which will look like a URL).
+When adding this as an identifier to the Organizational Identity, use the "OIDC sub" identity type.
+
+Once the user's person record has been created using that process, go to the COmanage collaboration, choose :guilabel:`Groups` from the sidebar, choose :guilabel:`All Groups`, and add them as a member and owner of the ``CO:admins`` group.
+
+Regular administrators
+----------------------
+
+Regular administrators can be onboarded in the normal way, using the "Self Signup With Approval" flow like any other user.
+Once their petition has been approved and their user record has been created, go to the LSST collaboration, choose :guilabel:`Groups` from the sidebar, choose :guilabel:`All Groups`, and add them as a member and owner of the ``CO:admins`` group.
+
+This is the appropriate permissions for users who will be approving the petitions of other users and sorting users into the appropriate groups.
 
 Configuration
 =============
