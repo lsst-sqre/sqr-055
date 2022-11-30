@@ -255,6 +255,19 @@ The plugin used is `GroupNameValidator <https://github.com/cilogon/GroupNameVali
    Configure::write('GroupNameValidator.pattern', '/^g_[a-z0-9._-]{1,30}$/');
    Configure::write('GroupNameValidator.flash_error_text', 'Name must start with g_ and use only a-z,0-9,.,_, and -');
 
+Navigation links
+----------------
+
+Add a link to the corresponding Science Platform instance to the top bar of the COmanage interface:
+
+#. Go to :menuselection:`Configuration --> CO Navigation Links`
+#. Select :guilabel:`Add CO Navigation Link`
+   - Description: ``Link to corresponding Science Platform instance``
+   - Link title: ``Science Platform (INT)`` (changing or removing the part in parentheses)
+   - Link URL: URL of the Science Platform instance
+
+Other helpful links (such as to documentation for how to use COmanage once we have it) can be added similarly.
+
 API
 ===
 
