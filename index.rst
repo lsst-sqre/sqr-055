@@ -89,8 +89,13 @@ The CSS we use is maintained in the `lsst-sqre/cilogon-theme GitHub project <htt
 ``src/rubin.css`` is the file that we provide to CILogon.
 
 This setup only has to be done once for all environments, not per-environment like the other COmanage configuration, and only needs to be redone if the CSS file changes.
-
 See `DM-35698 <https://jira.lsstcorp.org/browse/DM-35698>`__ for the process we followed when updating the CSS.
+
+One of the things this skin does is hide the "Remember me" checkbox from the login page.
+This normally allows users to tell CILogon to remember which identity provider they use, so they never see the page to select an identity provider again.
+Unfortunately, we've found this causes confusion in practice, since users end up wanting to select a different identity provider and can't, without going to an obscure-to-users CILogon page to remove that cookie.
+We therefore disable that button with CSS so that the user always sees the identity provider selection page.
+Their last selection is still remembered and selected by default.
 
 Configure unique attribute for each person
 ------------------------------------------
