@@ -186,11 +186,21 @@ This must match the settings used during :ref:`LDAP provisioning <ldap-provision
 #. Edit its enrollment attributes
 #. Edit the Name attribute, change its attribute definition to Preferred rather than Official, and make sure that only Given Name is required
 #. Edit the Email attribute and change its attribute definition to Preferred rather than Official
+#. Add a new enrollment attribute:
+   - Label: ``Users group``
+   - Attribute class: ``CO Person``
+   - Attribute name: ``Group member``
+   - Required: ``Required``
+   - Default value: ``g_users`` (or whatever the name of the general users group is)
+   - Modifiable: unchecked
+   - Hidden: checked
 
 The email confirmation mode setting adds a confirmation screen when confirming an email address.
 If this is not done, just visiting the URL sent in an email address will automatically confirm the email address.
 This interacts poorly with email anti-virus systems that retrieve all URLs in incoming messages and thus would automatically confirm email addresses.
 Since anti-virus systems don't interact with the retrieved page, requiring the user click a button addresses this problem.
+
+The additional enrollment attribute automatically adds new users to the general users group, avoiding an additional step for the person approving new users unless that user needs to be a member of a special group.
 
 In addition, we install the `IdentifierEnroller Plugin <https://spaces.at.internet2.edu/display/COmanage/IdentifierEnroller+Plugin>`__ and use it to capture the requested username after email verification.
 This plugin has better error handling than adding username to the list of enrollment attributes, particularly if that username is already in use.
