@@ -64,6 +64,8 @@ When adding this as an identifier to the Organizational Identity, use the "OIDC 
 
 Once the user's person record has been created using that process, go to the COmanage collaboration, choose :guilabel:`Groups` from the sidebar, choose :guilabel:`All Groups`, and add them as a member and owner of the ``CO:admins`` group.
 
+As mentioned above, make sure not to attempt to onboard this same identity into the LSST collaboration or add it as an additional entity to any person record in that collaboration, since this will currently cause it to lose Platform Administrator permissions.
+
 Regular administrators
 ----------------------
 
