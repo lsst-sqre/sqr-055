@@ -222,12 +222,17 @@ To configure this plugin:
 
 .. rst-class:: compact
 
+#. Go to the "Self Signup With Approval" enrollment flow
 #. Attach the IdentifierEnroller as a wedge
 #. Select Configure
 #. Select "Manage Indentifier Enroller Identifiers"
 #. Set the label to ``Username``
 #. Set the description to something appropriate
 #. Set the identifier type to ``UID``
+
+Finally, to work around `CO-1244 <https://todos.internet2.edu/browse/CO-1244>`__, we use `a custom plugin <https://github.com/cilogon/Lsst01Enroller>`__ that finds any groups a user was added to as part of the petition and reprovisions those groups.
+As with the identifier enroller plugin, this Lsst01Enroller plugin is installed as a wedge.
+It has no configuration options.
 
 Username validation
 -------------------
