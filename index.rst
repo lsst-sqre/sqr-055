@@ -169,6 +169,8 @@ OpenID Connect client
 The important configuration setting here is to map ``voPersonApplicationUID`` to the ``username`` claim.
 This is used by Gafaelfawr_ to get the username after authentication or, if that claim is not set, to know that the user is not enrolled in COmanage and to redirect to an enrollment flow.
 
+.. _Gafaelfawr: https://gafaelfawr.lsst.io/
+
 .. rst-class:: compact
 
 #. Go to :menuselection:`Configuration --> OIDC Clients`
@@ -234,6 +236,10 @@ Finally, to work around `CO-1244 <https://todos.internet2.edu/browse/CO-1244>`__
 As with the identifier enroller plugin, this Lsst01Enroller plugin is installed as a wedge.
 It has no configuration options.
 
+Currently, this flow does not mark the user's chosen name as primary, and thus does not change the name under which they're shown in COmanage screens such as :guilabel:`My Population`.
+This only affects COmanage, not the information that's exported to LDAP and thus is used by the Science Platform.
+We have requested an additional enrollment wedge that would automatically set the user's chosen name as their primary name.
+
 Username validation
 -------------------
 
@@ -281,6 +287,14 @@ Add a link to the corresponding Science Platform instance to the top bar of the 
 Other helpful links (such as to documentation for how to use COmanage once we have it) can be added similarly.
 See `Configuring Navigation Links <https://spaces.at.internet2.edu/display/COmanage/Configuring+Navigation+Links>`__ for more details.
 
+Timeouts
+========
+
+When the user goes to COmanage (to manage their groups or identities, for example) and are redirected to CILogon to authenticate, they have 15 minutes to complete the authentication.
+If they take longer than that to complete their authentication, they will receive a Timeout red error message after returning to COmanage and will have to start again.
+
+Once a user has authenticated to COmanage, the session timeout is eight hours, after which they'll be logged out and will have to log in again.
+
 API
 ===
 
@@ -309,8 +323,8 @@ The base URL is the hostname of the COmanage registry service with ``/registry``
 
 We currently don't expect to use the REST API.
 
-Gafaelfawr
-==========
+Use with Gafaelfawr
+===================
 
 Here is an example configuration of the Gafaelfawr Helm chart to use CILogon and COmanage.
 This is suitable for the ``values-*.yaml`` file in Phalanx_.
@@ -341,6 +355,10 @@ This uses the CILogon test LDAP server (a production configuration will probably
 
 Open COmanage work
 ==================
+
+- Add an enrollment wedge that will set the user's entered name as the primary name so that it will be displayed in the COmanage screens.
+  This will ensure the displayed name (such as when adding a user to groups) matches the name used by the Science Platform.
+  It also works around the problem that CILogon is not requesting names from GitHub and thus all GitHub identities have CILogon identity URIs rather than names.
 
 - The landing pages before and after verifying the user's email address need further customization.
   The current versions are in the `cilogin/lsst-registry-landing GitHub repository <https://github.com/cilogon/lsst-registry-landing>`__.
