@@ -240,6 +240,22 @@ Currently, this flow does not mark the user's chosen name as primary, and thus d
 This only affects COmanage, not the information that's exported to LDAP and thus is used by the Science Platform.
 We have requested an additional enrollment wedge that would automatically set the user's chosen name as their primary name.
 
+In a closely-related issue, COmanage does not capture the user's name from GitHub because it wants to parse the name into given and family names, and GitHub does not provide that information.
+This means that all GitHub users show up with a "name" set to the opaque CIlogon identifier in user lists, enrollment petition lists, and so forth.
+Having an enrollment wedge to set the name to match what the user chose during enrollment will work around this problem.
+
+Configure names
+---------------
+
+The default name configuration adds a field for an honorific, which is not useful to us.
+
+Ideally we would represent all names as a simple text box that allows the user to enter an opaque string, but unfortunately the COmanage data model requires separating the name into components.
+The best compromise available between letting someone enter as much of their name as they wish and not prompting for too much spurious data is to configure the name fields as given, middle, family, and suffix, but only require the given name.
+
+#. Go to :menuselection:`Configuration --> CO Settings`
+#. Change :guilabel:`Name Required Fields` to "Given Name"
+#. Change :guilabel:`Name Permitted Fields` to "Given, Middle, Family, Suffix"
+
 Username validation
 -------------------
 
@@ -358,7 +374,7 @@ Open COmanage work
 
 - Add an enrollment wedge that will set the user's entered name as the primary name so that it will be displayed in the COmanage screens.
   This will ensure the displayed name (such as when adding a user to groups) matches the name used by the Science Platform.
-  It also works around the problem that CILogon is not requesting names from GitHub and thus all GitHub identities have CILogon identity URIs rather than names.
+  It also works around the problem that CILogon does not take names from GitHub and thus all GitHub identities have CILogon identity URIs rather than names.
 
 - The landing pages before and after verifying the user's email address need further customization.
   The current versions are in the `cilogin/lsst-registry-landing GitHub repository <https://github.com/cilogon/lsst-registry-landing>`__.
