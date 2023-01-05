@@ -233,16 +233,9 @@ To configure this plugin:
 #. Set the identifier type to ``UID``
 
 Finally, to work around `CO-1244 <https://todos.internet2.edu/browse/CO-1244>`__, we use `a custom plugin <https://github.com/cilogon/Lsst01Enroller>`__ that finds any groups a user was added to as part of the petition and reprovisions those groups.
+This plugin also sets the preferred name chosen by the user during enrollment as primary, ensuring that the name chosen by the user overrides what comes from their identity provider and working around the fact that CILogon doesn't get names from GitHub and thus by default shows GitHub identities with opaque identifiers.
 As with the identifier enroller plugin, this Lsst01Enroller plugin is installed as a wedge.
 It has no configuration options.
-
-Currently, this flow does not mark the user's chosen name as primary, and thus does not change the name under which they're shown in COmanage screens such as :guilabel:`My Population`.
-This only affects COmanage, not the information that's exported to LDAP and thus is used by the Science Platform.
-We have requested an additional enrollment wedge that would automatically set the user's chosen name as their primary name.
-
-In a closely-related issue, COmanage does not capture the user's name from GitHub because it wants to parse the name into given and family names, and GitHub does not provide that information.
-This means that all GitHub users show up with a "name" set to the opaque CIlogon identifier in user lists, enrollment petition lists, and so forth.
-Having an enrollment wedge to set the name to match what the user chose during enrollment will work around this problem.
 
 Configure names
 ---------------
@@ -371,10 +364,6 @@ This uses the CILogon test LDAP server (a production configuration will probably
 
 Open COmanage work
 ==================
-
-- Add an enrollment wedge that will set the user's entered name as the primary name so that it will be displayed in the COmanage screens.
-  This will ensure the displayed name (such as when adding a user to groups) matches the name used by the Science Platform.
-  It also works around the problem that CILogon does not take names from GitHub and thus all GitHub identities have CILogon identity URIs rather than names.
 
 - The landing pages before and after verifying the user's email address need further customization.
   The current versions are in the `cilogin/lsst-registry-landing GitHub repository <https://github.com/cilogon/lsst-registry-landing>`__.
