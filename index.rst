@@ -197,8 +197,17 @@ This must match the settings used during :ref:`LDAP provisioning <ldap-provision
 #. Edit "Self Signup With Approval" enrollment flow
 #. Change "Email Confirmation Mode" to ``review`` and save
 #. Edit its enrollment attributes
-#. Edit the Name attribute, change its attribute definition to Preferred rather than Official, and make sure that only Given Name is required
-#. Edit the Email attribute and change its attribute definition to Preferred rather than Official
+#. Edit the Name attribute
+
+   - Set :guilabel:`Description` to "Enter the name you are known by professionally (for example, the name you would use on scientific papers)"
+   - Change its attribute definition to Preferred rather than Official
+   - Make sure that only Given Name is required
+
+#. Edit the Email attribute
+
+   - Set :guilabel:`Description` to "Please use your institutional (university, research institution) email address if possible"
+   - Change its attribute definition to Preferred rather than Official
+
 #. Add a new enrollment attribute:
 
    - Label: ``Users group``
