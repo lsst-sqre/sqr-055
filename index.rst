@@ -235,16 +235,42 @@ To configure this plugin:
 
 #. Go to the "Self Signup With Approval" enrollment flow
 #. Attach the IdentifierEnroller as a wedge
-#. Select Configure
-#. Select "Manage Indentifier Enroller Identifiers"
+#. Select :guilabel:`Configure`
+#. Select :guilabel:`Manage Indentifier Enroller Identifiers`
 #. Set the label to ``Username``
 #. Set the description to something appropriate
 #. Set the identifier type to ``UID``
 
-Finally, to work around `CO-1244 <https://todos.internet2.edu/browse/CO-1244>`__, we use `a custom plugin <https://github.com/cilogon/Lsst01Enroller>`__ that finds any groups a user was added to as part of the petition and reprovisions those groups.
-This plugin also sets the preferred name chosen by the user during enrollment as primary, ensuring that the name chosen by the user overrides what comes from their identity provider and working around the fact that CILogon doesn't get names from GitHub and thus by default shows GitHub identities with opaque identifiers.
+Finally, to work around multiple bugs in the enrollment process, we use a `a custom plugin <https://github.com/cilogon/Lsst01Enroller>`__.
+This does the following:
+
+- Find any group that a user was added to as part of the petition and reprovision those groups.
+
+- Sets the preferred name chosen by the user during enrollment as primary, ensuring that the name chosen by the user overrides what comes from their identity provider and working around the fact that CILogon doesn't get names from GitHub and thus by default shows GitHub identities with opaque identifiers.
+
+- Handles accidentally abandoned enrollment flows by returning the user to where they left off.
+  Specifically, via a hook in the start step, if the login identifier exists and is linked to an Org Identity that is linked to a CO Person record in the "Pending Confirmation" state and that has no ``Name`` object attached of type "Preferred" and no email address attached of type "Preferred," the user is redirected back to the prompt for enrollment attributes, rather than trying to create a new stub person record (which would fail).
+
+- If there is an existing Org Identity with login Identifier, CO Person record in the Pending Confirmation state, and a ``Name`` object and email address of type "Preferred," diagnose this as an enrollment still waiting email confirmation.
+  Rather than trying to create a new person record, redirect the user to a configurable URL that tells them that their petition is awaiting email confirmation.
+
+- If there is an existing Org Identity with login Identifier, CO Person record in the Pending Approval state, and a ``Name`` object and email address of type "Preferred," diagnose this as an enrollment waiting for approval.
+  Rather than trying to create a new person record, redirect the user to a configurable URL that explains the approval process.
+
 As with the identifier enroller plugin, this Lsst01Enroller plugin is installed as a wedge.
-It has no configuration options.
+Because this requires installation of a custom plugin, this is done by the CILogon administrators rather than by Rubin Observatory staff.
+
+To configure the two URLs used in the last two checks:
+
+.. rst-class:: compact
+
+#. Go to the "Self Signup With Approval" enrollment flow
+#. Select :guilabel:`Attach Enrollment Flow Wedges` (top right)
+#. Select :guilabel:`Configure` for the Lsst01Enroller plugin
+#. Set the pending approval link to ``https://cilogon.github.io/lsst-registry-landing/duplicate_pending_approval``
+#. Set the pending confirmation link to ``https://cilogon.github.io/lsst-registry-landing/duplicate_pending_confirmation``
+
+These are currently placeholder pages that we need to customize, and may move elsewhere once we have customized them.
 
 Configure names
 ---------------
@@ -374,7 +400,7 @@ This uses the CILogon test LDAP server (a production configuration will probably
 Open COmanage work
 ==================
 
-- The landing pages before and after verifying the user's email address need further customization.
+- The landing pages before and after verifying the user's email address, and when the user tries to restart enrollment without confirming their email or while their petition is awaiting approval, need further customization.
   The current versions are in the `cilogin/lsst-registry-landing GitHub repository <https://github.com/cilogon/lsst-registry-landing>`__.
 
 - COmanage can be themed following the instructions at `Theming COmanage Registry <https://spaces.at.internet2.edu/display/COmanage/Theming+COmanage+Registry>`__.
