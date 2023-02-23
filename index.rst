@@ -208,6 +208,10 @@ This must match the settings used during :ref:`LDAP provisioning <ldap-provision
    - Set :guilabel:`Description` to "Please use your institutional (university, research institution) email address if possible"
    - Change its attribute definition to Preferred rather than Official
 
+#. Set :guilabel:`Submission Redirect URL` to ``https://lsst-sqre.github.io/lsst-registry-landing/self_signup_after_submission``.
+
+#. Set :guilabel:`Confirmation Redirect URL` to ``https://lsst-sqre.github.io/lsst-registry-landing/self_signup_after_verification``.
+
 #. Add a new enrollment attribute:
 
    - Label: ``Users group``
@@ -267,8 +271,8 @@ To configure the two URLs used in the last two checks:
 #. Go to the "Self Signup With Approval" enrollment flow
 #. Select :guilabel:`Attach Enrollment Flow Wedges` (top right)
 #. Select :guilabel:`Configure` for the Lsst01Enroller plugin
-#. Set the pending approval link to ``https://cilogon.github.io/lsst-registry-landing/duplicate_pending_approval``
-#. Set the pending confirmation link to ``https://cilogon.github.io/lsst-registry-landing/duplicate_pending_confirmation``
+#. Set the pending approval link to ``https://lsst-sqre.github.io/lsst-registry-landing/duplicate_pending_approval``
+#. Set the pending confirmation link to ``https://lsst-sqre.github.io/lsst-registry-landing/duplicate_pending_confirmation``
 
 These are currently placeholder pages that we need to customize, and may move elsewhere once we have customized them.
 
