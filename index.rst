@@ -240,9 +240,10 @@ To configure this plugin:
 #. Go to the "Self Signup With Approval" enrollment flow
 #. Attach the IdentifierEnroller as a wedge
 #. Select :guilabel:`Configure`
-#. Select :guilabel:`Manage Indentifier Enroller Identifiers`
+#. Select :guilabel:`Manage Identifier Enroller Identifiers`
+#. Select :guilabel:`Add Identifier Enroller Identifier`
 #. Set the label to ``Username``
-#. Set the description to something appropriate
+#. Set the description to "The username you will use inside the Rubin Science Platform. Must start with a lowercase letter and consist of lowercase letters, numbers, or dash (-)"
 #. Set the identifier type to ``UID``
 
 Finally, to work around multiple bugs in the enrollment process, we use a `a custom plugin <https://github.com/cilogon/Lsst01Enroller>`__.
