@@ -282,11 +282,30 @@ Configure names
 The default name configuration adds a field for an honorific, which is not useful to us.
 
 Ideally we would represent all names as a simple text box that allows the user to enter an opaque string, but unfortunately the COmanage data model requires separating the name into components.
-The best compromise available between letting someone enter as much of their name as they wish and not prompting for too much spurious data is to configure the name fields as given, middle, family, and suffix, but only require the given name.
+The best compromise available between letting someone enter as much of their name as they wish and not prompting for too much spurious data is to configure the name fields as given and family only.
+Users can enter values with spaces, commas, etc. in those fields if needed.
 
 #. Go to :menuselection:`Configuration --> CO Settings`
 #. Change :guilabel:`Name Required Fields` to "Given Name"
-#. Change :guilabel:`Name Permitted Fields` to "Given, Middle, Family, Suffix"
+#. Change :guilabel:`Name Permitted Fields` to "Given, Family"
+
+Self-service attribute changes
+------------------------------
+
+We want users to be able to change their name and email address whenever they wish.
+
+#. Go to :menuselection:`Configuration --> Self Service Permissions`
+#. Select :guilabel:`Add Self Service Permission`:
+
+   - Model: ``Name``
+   - Type: ``Preferred``
+   - Permission: ``Read Write``
+
+#. Select :guilabel:`Add Self Service Permission`:
+
+   - Model: ``Email Address``
+   - Type: ``Preferred``
+   - Permission: ``Read Write``
 
 Username validation
 -------------------
