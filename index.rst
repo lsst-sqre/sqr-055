@@ -208,9 +208,10 @@ This must match the settings used during :ref:`LDAP provisioning <ldap-provision
    - Set :guilabel:`Description` to "Please use your institutional (university, research institution) email address if possible"
    - Change its attribute definition to Preferred rather than Official
 
-#. Set :guilabel:`Submission Redirect URL` to ``https://lsst-sqre.github.io/lsst-registry-landing/self_signup_after_submission``.
+#. Set :guilabel:`Submission Redirect URL` to ``https://<environment>/enrollment/thanks-for-signing-up``.
+   ``<environment>`` should be the domain name of the corresponding Phalanx environment.
 
-#. Set :guilabel:`Confirmation Redirect URL` to ``https://lsst-sqre.github.io/lsst-registry-landing/self_signup_after_verification``.
+#. Set :guilabel:`Confirmation Redirect URL` to ``https://<environment>/enrollment/thanks-for-verifying``.
 
 #. Add a new enrollment attribute:
 
@@ -272,8 +273,8 @@ To configure the two URLs used in the last two checks:
 #. Go to the "Self Signup With Approval" enrollment flow
 #. Select :guilabel:`Attach Enrollment Flow Wedges` (top right)
 #. Select :guilabel:`Configure` for the Lsst01Enroller plugin
-#. Set the pending approval link to ``https://lsst-sqre.github.io/lsst-registry-landing/duplicate_pending_approval``
-#. Set the pending confirmation link to ``https://lsst-sqre.github.io/lsst-registry-landing/duplicate_pending_confirmation``
+#. Set the pending approval link to ``https://<environment>/enrollment/pending-approval``
+#. Set the pending confirmation link to ``https://<environment>/enrollment/pending-confirmation``
 
 These are currently placeholder pages that we need to customize, and may move elsewhere once we have customized them.
 
@@ -423,9 +424,6 @@ This uses the CILogon test LDAP server (a production configuration will probably
 
 Open COmanage work
 ==================
-
-- The landing pages before and after verifying the user's email address, and when the user tries to restart enrollment without confirming their email or while their petition is awaiting approval, need further customization.
-  The current versions are in the `cilogin/lsst-registry-landing GitHub repository <https://github.com/cilogon/lsst-registry-landing>`__.
 
 - COmanage can be themed following the instructions at `Theming COmanage Registry <https://spaces.at.internet2.edu/display/COmanage/Theming+COmanage+Registry>`__.
   We haven't yet looked in detail at this, let alone started.
