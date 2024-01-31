@@ -1,11 +1,12 @@
-:tocdepth: 1
+#################################################
+COmanage configuration for Rubin Science Platform
+#################################################
 
-Abstract
-========
+.. abstract::
 
-COmanage_ is a user management system designed for academic and research collaborations.
-Rubin Observatory will use COmanage (as provided by CILogon_) as the user identity store and group management system for the Rubin Science Platform.
-This tech note provides the specific details of the COmanage configuration used by the Science Platform and summarizes remaining COmanage work.
+   COmanage_ is a user management system designed for academic and research collaborations.
+   Rubin Observatory will use COmanage (as provided by CILogon_) as the user identity store and group management system for the Rubin Science Platform.
+   This tech note provides the specific details of the COmanage configuration used by the Science Platform and summarizes remaining COmanage work.
 
 .. _COmanage: https://www.incommon.org/software/comanage/
 .. _CILogon: https://cilogon.org/
@@ -296,6 +297,8 @@ Self-service attribute changes
 
 We want users to be able to change their name and email address whenever they wish.
 
+.. rst-class:: compact
+
 #. Go to :menuselection:`Configuration --> Self Service Permissions`
 #. Select :guilabel:`Add Self Service Permission`:
 
@@ -334,9 +337,7 @@ Group name validation
 Unlike with usernames, COmanage does not provide out-of-the-box support for validating group names with a regular expression.
 We therefore use a custom plugin to enforce the group naming constraints defined in :dmtn:`225`.
 
-The plugin used is `GroupNameValidator <https://github.com/cilogon/GroupNameValidator>`__ with the following configuration:
-
-.. code-block:: php
+The plugin used is `GroupNameValidator <https://github.com/cilogon/GroupNameValidator>`__ with the following configuration::
 
    Configure::write('GroupNameValidator.pattern', '/^g_[a-z0-9._-]{1,30}$/');
    Configure::write('GroupNameValidator.flash_error_text', 'Name must start with g_ and use only a-z,0-9,.,_, and -');
@@ -345,6 +346,8 @@ Navigation links
 ----------------
 
 Add a link to the corresponding Science Platform instance to the top bar of the COmanage interface:
+
+.. rst-class:: compact
 
 #. Go to :menuselection:`Configuration --> CO Navigation Links`
 #. Select :guilabel:`Add CO Navigation Link`
