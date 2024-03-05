@@ -339,8 +339,27 @@ We therefore use a custom plugin to enforce the group naming constraints defined
 
 The plugin used is `GroupNameValidator <https://github.com/cilogon/GroupNameValidator>`__ with the following configuration::
 
-   Configure::write('GroupNameValidator.pattern', '/^g_[a-z0-9._-]{1,30}$/');
-   Configure::write('GroupNameValidator.flash_error_text', 'Name must start with g_ and use only a-z,0-9,.,_, and -');
+    Configure::write('GroupNameValidator.pattern', '/^g_[a-z0-9._-]{1,30}$/');
+    Configure::write('GroupNameValidator.flash_error_text', 'Name must start with g_ and use only a-z,0-9,.,_, and -');
+
+Email
+-----
+
+Change the template for the email message sent to users to prompt them to confirm their email:
+
+#. Go to :menuselection:`Configuration --> Message Templates`
+#. Select :guilabel:`Edit` for Self Signup with Approval Enrollment Flow Verification
+#. Change the message subject to::
+
+       Please confirm your Rubin Science Platform registration
+
+#. Leave the format as plain text and change the message body to the following.
+   Kkeep the hard wrapping, but change the URL of the environment at the end of the second paragraph:
+
+   .. literalinclude:: email-confirm.txt
+
+Then, email the COmanage support folks and ask the outgoing mail messages to use a ``Reply-To`` header of ``rsp-registration@lists.lsst.org``.
+(This change can't be made through the configuration interface.)
 
 Navigation links
 ----------------

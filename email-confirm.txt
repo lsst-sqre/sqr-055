@@ -1,0 +1,21 @@
+[DO NOT REPLY to this email - see below for how to get help]
+
+You are receiving this email because you initiated an account registration
+request for the Rubin Science Platform hosted at data.lsst.cloud
+
+Click on the link below so that we can verify that the email address you
+supplied is correct:
+
+(@INVITE_URL)
+
+After you click the link and verify your registration a member of Rubin
+Observatory staff will review your request for eligibility and then
+approve it. 
+
+You will receive another email when the registration is complete.
+
+If you need help, visit https://rsp.lsst.io/support
+
+Note: You are receiving this message from a cilogon.org address because
+CILogon operate Rubin's user registry; this allows you to log on to the
+Rubin Science Platform with your institutional credentials. 
