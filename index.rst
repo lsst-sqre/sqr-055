@@ -354,9 +354,19 @@ Change the template for the email message sent to users to prompt them to confir
        Please confirm your Rubin Science Platform registration
 
 #. Leave the format as plain text and change the message body to the following.
-   Kkeep the hard wrapping, but change the URL of the environment at the end of the second paragraph:
+   Change the URL of the environment at the end of the second paragraph and then save.
 
    .. literalinclude:: email-confirm.txt
+
+#. Select :guilabel:`Edit` for Self Signup with Approval Enrollment Flow Complete.
+#. Change the message subject to::
+
+       Your Rubin Science Platform account has been approved
+
+#. Leave the format as plain text and change the message body to the following.
+   Change the URL of the environment at the end of the third paragraph and then save.
+
+   .. literalinclude:: email-approved.txt
 
 Then, email the COmanage support folks and ask the outgoing mail messages to use a ``Reply-To`` header of ``rsp-registration@lists.lsst.org``.
 (This change can't be made through the configuration interface.)
