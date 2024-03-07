@@ -1,0 +1,7 @@
+[DO NOT REPLY to this email - see below for how to get help]
+
+Your Rubin Science Platform registration  is now complete!
+
+Visit https://data-dev.lsst.cloud to start using the platform.
+
+For help, consult our support pages at https://rsp.lsst.io/support
