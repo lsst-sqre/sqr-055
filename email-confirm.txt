@@ -1,12 +1,14 @@
 [DO NOT REPLY to this email - see below for how to get help]
 
-You are receiving this email because you initiated an account request for the Rubin Science Platform hosted at data-dev.lsst.cloud
+You are receiving this email because you initiated an account request for the Rubin Science Platform hosted at data-int.lsst.cloud
 
-Click on the link below so that we can verify that the email address you supplied is correct:
+Here is your verification code: 
 
-(@INVITE_URL)
+        (@TOKEN)
 
-After you click the link AND verify your information, a member of Rubin Observatory staff will review your request for eligibility and then approve it. 
+Please enter this code on the web page to continue the registration process.
+
+After you enter the code below AND complete the registration, a member of Rubin Observatory staff will review your request for eligibility and then approve it. 
 
 You will receive another email when your account is ready for use. 
 
