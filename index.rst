@@ -231,6 +231,9 @@ Since anti-virus systems don't interact with the retrieved page, requiring the u
 
 The additional enrollment attribute automatically adds new users to the general users group, avoiding an additional step for the person approving new users unless that user needs to be a member of a special group.
 
+Identifier plugin
+^^^^^^^^^^^^^^^^^
+
 In addition, we install the `IdentifierEnroller Plugin <https://spaces.at.internet2.edu/display/COmanage/IdentifierEnroller+Plugin>`__ and use it to capture the requested username after email verification.
 This plugin has better error handling than adding username to the list of enrollment attributes, particularly if that username is already in use.
 It is attached as an enrollment flow wedge to the "Self Signup With Approval" enrollment flow.
@@ -240,13 +243,50 @@ To configure this plugin:
 .. rst-class:: compact
 
 #. Go to the "Self Signup With Approval" enrollment flow
-#. Attach the IdentifierEnroller as a wedge
+#. Attach the ``IdentifierEnroller`` as a wedge
 #. Select :guilabel:`Configure`
 #. Select :guilabel:`Manage Identifier Enroller Identifiers`
 #. Select :guilabel:`Add Identifier Enroller Identifier`
 #. Set the label to ``Username``
 #. Set the description to "The username you will use inside the Rubin Science Platform. Must start with a lowercase letter and consist of lowercase letters, numbers, or dash (-)"
 #. Set the identifier type to ``UID``
+
+Email verification plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In order to prevent aggressive email scanners from following links in the email verification message and breaking enrollment in various ways, we install the `EmailVerificationEnroller plugin <https://github.com/cilogon/EmailVerificationEnroller>`__.
+This changes the email verification flow to instead send a verification code to the user, which they need to cut and paste into an HTML form presented as part of the enrollment flow.
+
+To configure this plugin:
+
+#. Go to :menuselection:`Configure --> Message Templates`
+#. Create a ``Self Signup with Approval Enrollment Flow Verification Via Code`` message template
+#. Set the context to :guilabel:`Enrollment Flow Verification`
+#. Set the subject to::
+
+       Please confirm your Rubin Science Platform registration
+
+#. Set the message format to :guilabel:`Plain Text and HTML`
+#. Set the text message body to the following.
+   Change the URL of the environment at the end of the second paragraph.
+
+   .. literalinclude:: email-confirm.txt
+      :language: text
+
+#. Set the HTML message body to the following.
+   Change the URL of the environment at the end of the second paragraph and then save.
+
+   .. literalinclude:: email-confirm.html
+      :language: html
+
+#. Go to the "Self Signup With Approval" enrollment flow
+#. Attach the ``EmailVerificationController`` as a wedge
+#. Select :guilabel:`Configure` for the ``EmailVerificationController`` wedge
+#. Select ``Self Signup with Approval Enrollment Flow Verification Via Code`` as the email template and save.
+   The other defaults are fine.
+
+Enrollment process plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Finally, to work around multiple bugs in the enrollment process, we use a `a custom plugin <https://github.com/cilogon/Lsst01Enroller>`__.
 This does the following:
@@ -273,11 +313,9 @@ To configure the two URLs used in the last two checks:
 
 #. Go to the "Self Signup With Approval" enrollment flow
 #. Select :guilabel:`Attach Enrollment Flow Wedges` (top right)
-#. Select :guilabel:`Configure` for the Lsst01Enroller plugin
+#. Select :guilabel:`Configure` for the ``Lsst01Enroller plugin``
 #. Set the pending approval link to ``https://<environment>/enrollment/pending-approval``
 #. Set the pending confirmation link to ``https://<environment>/enrollment/pending-confirmation``
-
-These are currently placeholder pages that we need to customize, and may move elsewhere once we have customized them.
 
 Configure names
 ---------------
@@ -345,20 +383,9 @@ The plugin used is `GroupNameValidator <https://github.com/cilogon/GroupNameVali
 Email
 -----
 
-Change the template for the email message sent to users to prompt them to confirm their email:
+Change the template for the email message sent to users after their account has been approved:
 
 #. Go to :menuselection:`Configuration --> Message Templates`
-#. Select :guilabel:`Edit` for Self Signup with Approval Enrollment Flow Verification
-#. Change the message subject to::
-
-       Please confirm your Rubin Science Platform registration
-
-#. Leave the format as plain text and change the message body to the following.
-   Change the URL of the environment at the end of the second paragraph and then save.
-
-   .. literalinclude:: email-confirm.txt
-      :language: text
-
 #. Select :guilabel:`Edit` for Self Signup with Approval Enrollment Flow Complete.
 #. Change the message subject to::
 
