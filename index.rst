@@ -353,7 +353,8 @@ We want users to be able to change their name and email address whenever they wi
 Username validation
 -------------------
 
-Ensure the `Regex Identifier Validator Plugin`_ is enabled.  Then:
+Ensure the `Regex Identifier Validator Plugin`_ is enabled.
+Then:
 
 .. rst-class:: compact
 
@@ -375,10 +376,21 @@ Group name validation
 Unlike with usernames, COmanage does not provide out-of-the-box support for validating group names with a regular expression.
 We therefore use a custom plugin to enforce the group naming constraints defined in :dmtn:`225`.
 
-The plugin used is `GroupNameValidator <https://github.com/cilogon/GroupNameValidator>`__ with the following configuration::
+The plugin used is `GroupNameValidator <https://github.com/cilogon/GroupNameValidator>`__.
+Ensure it is enabled.
+Then:
 
-    Configure::write('GroupNameValidator.pattern', '/^g_[a-z0-9._-]{1,30}$/');
-    Configure::write('GroupNameValidator.flash_error_text', 'Name must start with g_ and use only a-z,0-9,.,_, and -');
+.. rst-class:: compact
+
+#. Go to :menuselection:`Configuration --> Group Name Validator` and add a new validator (making sure that any existing validators are suspended or deleted)
+#. Set the details of the rule as follows:
+
+   - Name: ``Group name validation``
+   - Status: ``Active``
+   - Name format: ``/^g_[a-z0-9._-]{1,30}$/``
+   - Error message: ``Name must start with g_ and use only a-z,0-9,.,_, and -``
+
+This implements the restrictions on valid usernames documented in :dmtn:`225`.
 
 Email
 -----
